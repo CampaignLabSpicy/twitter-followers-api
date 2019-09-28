@@ -131,7 +131,7 @@ app.get('/test', (req, res) => {
             cursor: data.next_cursor
           })
         } else {
-          const matchedIds = ids.filter(id => knownIds[id])
+          const matchedIds = ids.filter(matcher)
           res.send({ total: ids.length, matched: matchedIds.length })
         }
       } else {

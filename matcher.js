@@ -12,8 +12,9 @@ const { newRedisServer, redisPort, waitingForRedisServer, shutdownRedis } = requ
 const inputCsvFiles = ['data/PeoplesMomentum_followers.csv', 'data/johnmcdonnellMP_followers.csv'];
 const csvOptions = { headers : ['follower'] };                   // impose this header on headerless data
 const withHeaderOverride = set=> data=> set.push(data.follower);   // to parse data with header
-const withHeaderOverrideRedis = key=> data=> redisClient.lpush(key, data.follower);   // to parse data with header
+const withHeaderOverrideRedis = key=> data=> redisClient.sadd(key, data.follower);   // to parse data with header
 
+const knownIds = require('./knownIds');
 
 redisClient.on("error", err=> {
     console.log(`Error ${err}`);
@@ -39,7 +40,7 @@ const loadStaticData = inputCsvFiles=> {
       fs.createReadStream(file)
         .pipe(csvParse(csvOptions))
         // .on('data', csvParseOverride(set) || (data=> set.push(data)))
-        .on('data', withHeaderOverrideRedis(file) || (data=> redisClient.lpush(file,data)))  // use filename as key
+        .on('data', withHeaderOverrideRedis(file) || (data=> redisClient.sadd(file, data)))  // use filename as key
         .on('end', () => {
           resolve (set);
         });
@@ -48,7 +49,7 @@ const loadStaticData = inputCsvFiles=> {
   // console.log('>',comparatorSets);
   // console.log(`${comparatorSets.length} file(s) opened: ${comparatorSets.join(', ')}`);
   // return comparatorSets
-  return inputCsvFiles.map (file => redisClient.lrange(file, 0, -1) );
+  return inputCsvFiles.map (file => redisClient.smembers(file) );
 }
 
 Promise.all(loadStaticData(inputCsvFiles))
@@ -58,3 +59,12 @@ Promise.all(loadStaticData(inputCsvFiles))
       console.log(`loaded ${result.length}`);
     }))
   // .then (()=> shutdownRedis());
+
+const matcher = id => knownIds[id] ;
+
+// const matcher = id => {
+//
+// }
+
+
+module.exports = { matcher }
