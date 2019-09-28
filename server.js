@@ -43,7 +43,6 @@ app.use(cors({
   credentials: true
 }))
 
-// console.log(process.env)
 console.log('Loading data')
 const knownIds = require('./knownIds')
 console.log('Loaded data')
