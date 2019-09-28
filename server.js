@@ -35,6 +35,7 @@ app.use(cors({
 }))
 
 // Get your credentials here: https://dev.twitter.com/apps
+console.log(process.env);
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
@@ -92,7 +93,7 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
         // console.log('React detected')
-        return res.redirect('http://knowyourfollowers.org')
+        return res.redirect('https://knowyourfollowers.org')
       }
       res.redirect('/home')
     }
