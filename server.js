@@ -43,7 +43,7 @@ console.log('Loading data')
 const knownIds = require('./knownIds')
 console.log('Loaded data')
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 8080
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
@@ -69,21 +69,21 @@ app.get('/sessions/connect', function (req, res) {
       req.session.oauthRequestTokenSecret = oauthTokenSecret
       req.session.client = req.query.client
 
-      console.log('Double check on 2nd step')
-      console.log('------------------------')
-      console.log('<<' + req.session.oauthRequestToken)
-      console.log('<<' + req.session.oauthRequestTokenSecret)
+      // console.log('Double check on 2nd step')
+      // console.log('------------------------')
+      // console.log('<<' + req.session.oauthRequestToken)
+      // console.log('<<' + req.session.oauthRequestTokenSecret)
       res.redirect('https://twitter.com/oauth/authorize?oauth_token=' + req.session.oauthRequestToken)
     }
   })
 })
 
 app.get('/sessions/callback', function (req, res) {
-  console.log('------------------------')
-  console.log(JSON.stringify(req.session, null, 4))
-  console.log('>>' + req.session.oauthRequestToken)
-  console.log('>>' + req.session.oauthRequestTokenSecret)
-  console.log('>>' + req.query.oauth_verifier)
+  // console.log('------------------------')
+  // console.log(JSON.stringify(req.session, null, 4))
+  // console.log('>>' + req.session.oauthRequestToken)
+  // console.log('>>' + req.session.oauthRequestTokenSecret)
+  // console.log('>>' + req.query.oauth_verifier)
   consumer.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier, function (error, oauthAccessToken, oauthAccessTokenSecret, results) {
     if (error) {
       res.send('Error getting OAuth access token : ' + inspect(error) + '[' + oauthAccessToken + ']' + '[' + oauthAccessTokenSecret + ']' + '[' + inspect(results) + ']', 500)
@@ -91,7 +91,7 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
-        console.log('React detected')
+        // console.log('React detected')
         return res.redirect('http://localhost:3000')
       }
       res.redirect('/home')
@@ -106,9 +106,9 @@ app.get('/home', function (req, res) {
       res.redirect('/sessions/connect')
     } else {
       const parsedData = JSON.parse(data)
-      console.log('---------------------------------')
-      console.log(JSON.stringify(parsedData, null, 4))
-      console.log('---------------------------------')
+      // console.log('---------------------------------')
+      // console.log(JSON.stringify(parsedData, null, 4))
+      // console.log('---------------------------------')
       req.session.screenName = parsedData.screen_name
       res.send('You are signed in: ' + inspect(parsedData.screen_name))
     }
@@ -128,7 +128,7 @@ app.get('/test', (req, res) => {
   let pageCount = 0
   const name = req.session.screenName
   const retrieveUsers = (parameters) => {
-      console.log('Page 1 parameters:', parameters);
+      // console.log('Page 1 parameters:', parameters);
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
         ids = ids.concat(data.ids)
