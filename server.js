@@ -26,14 +26,16 @@ var inspect = require('util-inspect');
 var oauth = require('oauth');
 var cors = require('cors');
 var Twitter = require('twitter');
+require('dotenv').config();
 
 var app = express();
 // Check cors permissions before production
 app.use(cors());
 
 // Get your credentials here: https://dev.twitter.com/apps
-var _twitterConsumerKey = "CNvpVoxhSW16Q9YQiYrq0vQmv";
-var _twitterConsumerSecret = "LMuXdnUbcIG6hPd6OuDIL7xTfDyq7oGwTsPS2fKnPicVzyN9AR";
+var _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
+var _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET;
+console.log(_twitterConsumerSecret);
 
 var consumer = new oauth.OAuth(
     "https://twitter.com/oauth/request_token", "https://twitter.com/oauth/access_token", 
