@@ -83,7 +83,7 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
-        // console.log('React detected')
+        console.log('React detected')
         return res.redirect(_reactFrontEnd)
       }
       res.redirect('/home')
