@@ -30,7 +30,9 @@ require('dotenv').config()
 
 const app = express()
 // Check cors permissions before production
-app.use(cors())
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:8080']
+}))
 
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
@@ -39,6 +41,8 @@ const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 console.log('Loading data')
 const knownIds = require('./knownIds')
 console.log('Loaded data')
+
+const PORT = process.env.PORT || 3000
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
@@ -162,6 +166,6 @@ app.get('*', function (req, res) {
   res.redirect('/home')
 })
 
-app.listen(8080, function () {
-  console.log('App runining on port 8080!')
+app.listen(PORT, function () {
+  console.log(`App runining on port ${PORT}!`)
 })
