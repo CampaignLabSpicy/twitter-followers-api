@@ -37,7 +37,7 @@ app.use(cors({
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
-
+console.log(process.env)
 console.log('Loading data')
 const knownIds = require('./knownIds')
 console.log('Loaded data')
