@@ -92,7 +92,7 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
         // console.log('React detected')
-        return res.redirect('http://localhost:3000')
+        return res.redirect('http://knowyourfollowers.org')
       }
       res.redirect('/home')
     }
@@ -102,7 +102,7 @@ app.get('/sessions/callback', function (req, res) {
 app.get('/home', function (req, res) {
   consumer.get('https://api.twitter.com/1.1/account/verify_credentials.json', req.session.oauthAccessToken, req.session.oauthAccessTokenSecret, function (error, data, response) {
     if (error) {
-      // console.log(error)
+      console.log('/home error:', error);
       res.redirect('/sessions/connect')
     } else {
       const parsedData = JSON.parse(data)
