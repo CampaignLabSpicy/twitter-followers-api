@@ -9,7 +9,7 @@ const redis = require('redis'),
 const { newRedisServer, redisPort, waitingForRedisServer, shutdownRedis } = require ('./newredisserver'),
   redisServer = newRedisServer();
 
-const inputCsvFiles = ['data/PeoplesMomentum_followers.csv'];
+const inputCsvFiles = ['data/PeoplesMomentum_followers.csv', 'data/johnmcdonnellMP_followers.csv'];
 const csvOptions = { headers : ['follower'] };                   // impose this header on headerless data
 const withHeaderOverride = set=> data=> set.push(data.follower);   // to parse data with header
 const withHeaderOverrideRedis = key=> data=> redisClient.lpush(key, data.follower);   // to parse data with header
@@ -33,24 +33,28 @@ const testConnectionSync = ()=> {
 };
 
 const loadStaticData = inputCsvFiles=> {
-  let count=0;
-  const comparatorSets = inputCsvFiles
-    .map (file =>
-      new Promise ((resolve, reject)=> {
-        let set=[];
-        fs.createReadStream(file)
-          .pipe(csvParse(csvOptions))
-          // .on('data', csvParseOverride(set) || (data=> set.push(data)))
-          .on('data', withHeaderOverrideRedis(file) || (data=> redisClient.lpush(file,data)))  // use filename as key
-          .on('end', () => {
-            resolve (set);
-          });
-      })
-    );
-  console.log('>',comparatorSets);
-  console.log(`${comparatorSets.length} file(s) opened: ${comparatorSets.join(', ')}`);
-  return comparatorSets
+  const comparatorSets = inputCsvFiles.map (file =>
+    new Promise ((resolve, reject)=> {
+      let set=[];
+      fs.createReadStream(file)
+        .pipe(csvParse(csvOptions))
+        // .on('data', csvParseOverride(set) || (data=> set.push(data)))
+        .on('data', withHeaderOverrideRedis(file) || (data=> redisClient.lpush(file,data)))  // use filename as key
+        .on('end', () => {
+          resolve (set);
+        });
+    })
+  );
+  // console.log('>',comparatorSets);
+  // console.log(`${comparatorSets.length} file(s) opened: ${comparatorSets.join(', ')}`);
+  // return comparatorSets
+  return inputCsvFiles.map (file => redisClient.lrange(file, 0, -1) );
 }
 
-loadStaticData(inputCsvFiles)[0]
-  .then (results=> {testConnectionSync ()})
+Promise.all(loadStaticData(inputCsvFiles))
+  .then (results=>
+    results.forEach (result=> {
+      console.log(result);
+      console.log(`loaded ${result.length}`);
+    }))
+  // .then (()=> shutdownRedis());
