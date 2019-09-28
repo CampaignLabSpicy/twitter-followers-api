@@ -37,9 +37,10 @@ const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
 const _reactFrontEnd = process.env.REACT_APP_FRONTEND
+const _origins = (process.env.ACCESS_CONTROL_ALLOW_ORIGINS || '').split(',')
 
 app.use(cors({
-  origin: _reactFrontEnd,
+  origin: _origins,
   credentials: true
 }))
 
