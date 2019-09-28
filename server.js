@@ -117,8 +117,8 @@ app.get('/test', (req, res) => {
     let ids = [];
     // 15 pages max
     let pageCount = 0;
-    // let name = req.session.screenName;
-    let name = 'node-js'
+    let name = req.session.screenName;
+    // let name = 'node-js'
     let retrieveUsers = (parameters) => {
         twitterClient.get('followers/ids', parameters, function(error, data, response) {
             if (!error) {
