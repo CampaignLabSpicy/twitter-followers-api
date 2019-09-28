@@ -30,16 +30,19 @@ require('dotenv').config()
 
 const app = express()
 // Check cors permissions before production
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}))
+
 
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
 const _reactFrontEnd = process.env.REACT_APP_FRONTEND
+
+app.use(cors({
+  origin: _reactFrontEnd,
+  credentials: true
+}))
+
 // console.log(process.env)
 console.log('Loading data')
 const knownIds = require('./knownIds')
