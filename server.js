@@ -152,6 +152,6 @@ app.get('*', function (req, res) {
   res.redirect('/home')
 })
 
-app.listen(8080, function () {
-  console.log('App running on port 8080!')
+app.listen(PORT, function () {
+  console.log('App running on port ' + PORT + '!')
 })
