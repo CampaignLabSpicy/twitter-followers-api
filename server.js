@@ -35,7 +35,6 @@ app.use(cors())
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
-console.log(_twitterConsumerSecret)
 
 console.log('Loading data')
 const knownIds = require('./knownIds')
@@ -117,13 +116,14 @@ app.get('/test', (req, res) => {
     consumer_secret: _twitterConsumerSecret,
     access_token_key: req.session.oauthAccessToken,
     access_token_secret: req.session.oauthAccessTokenSecret
-  })
+  });
 
   let ids = []
   // 15 pages max
   let pageCount = 0
   const name = req.session.screenName
   const retrieveUsers = (parameters) => {
+      console.log('Page 1 parameters:', parameters);
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
         ids = ids.concat(data.ids)
