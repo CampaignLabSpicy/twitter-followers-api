@@ -37,6 +37,10 @@ const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 console.log(_twitterConsumerSecret)
 
+console.log('Loading data')
+const knownIds = require('./knownIds')
+console.log('Loaded data')
+
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
   _twitterConsumerKey, _twitterConsumerSecret, '1.0A', 'http://localhost:8080/sessions/callback', 'HMAC-SHA1')
@@ -115,14 +119,14 @@ app.get('/test', (req, res) => {
     access_token_secret: req.session.oauthAccessTokenSecret
   })
 
-  const ids = []
+  let ids = []
   // 15 pages max
   let pageCount = 0
   const name = req.session.screenName
   const retrieveUsers = (parameters) => {
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
-        ids.push(data.ids)
+        ids = ids.concat(data.ids)
         if (data.next_cursor !== 0 && pageCount < 15) {
           pageCount++
           retrieveUsers({
@@ -130,7 +134,8 @@ app.get('/test', (req, res) => {
             cursor: data.next_cursor
           })
         } else {
-          res.send(ids)
+          const matchedIds = ids.filter(id => knownIds[id])
+          res.send({ total: ids.length, matched: matchedIds.length })
         }
       } else {
         res.status(500).send(error)
