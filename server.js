@@ -39,7 +39,7 @@ console.log(_twitterConsumerSecret)
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
-  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', 'http://192.168.1.213:8080/sessions/callback', 'HMAC-SHA1')
+  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', 'http://localhost:8080/sessions/callback', 'HMAC-SHA1')
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -119,20 +119,26 @@ app.get('/test', (req, res) => {
   // 15 pages max
   let pageCount = 0
   const name = req.session.screenName
-  // let name = 'node-js'
   const retrieveUsers = (parameters) => {
+    console.log('retrive', pageCount + 1)
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
-        ids.push(data.ids)
-        if (data.next_cursor !== 0 && pageCount < 15) {
-          pageCount++
-          retrieveUsers({
-            screen_name: name,
-            cursor: data.next_cursor
-          })
-        } else {
-          res.send(ids)
-        }
+        retrieveUsers({
+          screen_name: name,
+          cursor: data.next_cursor
+        })
+        // ids.push(data.ids)
+        // if (data.next_cursor !== 0 && pageCount < 15) {
+        //   pageCount++
+        //   retrieveUsers({
+        //     screen_name: name,
+        //     cursor: data.next_cursor
+        //   })
+        // } else {
+        //   res.send(ids)
+        // }
+      } else {
+        res.status(500).send(error)
       }
     })
   }
