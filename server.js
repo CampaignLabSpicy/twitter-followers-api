@@ -37,6 +37,7 @@ app.use(cors({
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
+const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
 // console.log(process.env)
 console.log('Loading data')
 const knownIds = require('./knownIds')
@@ -46,7 +47,7 @@ const PORT = process.env.PORT || 3000
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
-  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', 'https://knowyourfollowers.herokuapp.com/sessions/connect', 'HMAC-SHA1')
+  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', TWITTER_CALLBACK_URL, 'HMAC-SHA1')
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
