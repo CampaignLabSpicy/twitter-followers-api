@@ -30,16 +30,25 @@ require('dotenv').config()
 
 const app = express()
 // Check cors permissions before production
-app.use(cors())
-
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}))
+ 
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
-console.log(_twitterConsumerSecret)
+const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
+// console.log(process.env)
+console.log('Loading data')
+const knownIds = require('./knownIds')
+console.log('Loaded data')
+
+const PORT = process.env.PORT || 8080
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
-  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', 'http://192.168.1.213:8080/sessions/callback', 'HMAC-SHA1')
+  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', _twitterCallbackUrl, 'HMAC-SHA1')
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -60,31 +69,20 @@ app.get('/sessions/connect', function (req, res) {
       req.session.oauthRequestToken = oauthToken
       req.session.oauthRequestTokenSecret = oauthTokenSecret
       req.session.client = req.query.client
-
-      console.log('Double check on 2nd step')
-      console.log('------------------------')
-      console.log('<<' + req.session.oauthRequestToken)
-      console.log('<<' + req.session.oauthRequestTokenSecret)
       res.redirect('https://twitter.com/oauth/authorize?oauth_token=' + req.session.oauthRequestToken)
     }
   })
 })
 
 app.get('/sessions/callback', function (req, res) {
-  console.log('------------------------')
-  console.log(JSON.stringify(req.session, null, 4))
-  console.log('>>' + req.session.oauthRequestToken)
-  console.log('>>' + req.session.oauthRequestTokenSecret)
-  console.log('>>' + req.query.oauth_verifier)
-  consumer.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier, function (error, oauthAccessToken, oauthAccessTokenSecret, results) {
+   consumer.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier, function (error, oauthAccessToken, oauthAccessTokenSecret, results) {
     if (error) {
       res.send('Error getting OAuth access token : ' + inspect(error) + '[' + oauthAccessToken + ']' + '[' + oauthAccessTokenSecret + ']' + '[' + inspect(results) + ']', 500)
     } else {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
-        console.log('React detected')
-        return res.redirect('http://localhost:3000')
+        return res.redirect('https://knowyourfollowers.org')
       }
       res.redirect('/home')
     }
@@ -94,13 +92,9 @@ app.get('/sessions/callback', function (req, res) {
 app.get('/home', function (req, res) {
   consumer.get('https://api.twitter.com/1.1/account/verify_credentials.json', req.session.oauthAccessToken, req.session.oauthAccessTokenSecret, function (error, data, response) {
     if (error) {
-      // console.log(error)
       res.redirect('/sessions/connect')
     } else {
       const parsedData = JSON.parse(data)
-      console.log('---------------------------------')
-      console.log(JSON.stringify(parsedData, null, 4))
-      console.log('---------------------------------')
       req.session.screenName = parsedData.screen_name
       res.send('You are signed in: ' + inspect(parsedData.screen_name))
     }
@@ -115,15 +109,14 @@ app.get('/test', (req, res) => {
     access_token_secret: req.session.oauthAccessTokenSecret
   })
 
-  const ids = []
+  let ids = []
   // 15 pages max
   let pageCount = 0
   const name = req.session.screenName
-  // let name = 'node-js'
   const retrieveUsers = (parameters) => {
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
-        ids.push(data.ids)
+        ids = ids.concat(data.ids)
         if (data.next_cursor !== 0 && pageCount < 15) {
           pageCount++
           retrieveUsers({
@@ -131,8 +124,11 @@ app.get('/test', (req, res) => {
             cursor: data.next_cursor
           })
         } else {
-          res.send(ids)
+          const matchedIds = ids.filter(id => knownIds[id])
+          res.send({ total: ids.length, matched: matchedIds.length })
         }
+      } else {
+        res.status(response.statusCode).send(error.message)
       }
     })
   }
@@ -156,6 +152,6 @@ app.get('*', function (req, res) {
   res.redirect('/home')
 })
 
-app.listen(8080, function () {
-  console.log('App runining on port 8080!')
+app.listen(PORT, function () {
+  console.log('App running on port ' + PORT + '!')
 })
