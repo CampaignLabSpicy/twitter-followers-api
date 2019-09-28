@@ -63,8 +63,16 @@ Promise.all(loadStaticData(inputCsvFiles))
 const matcher = id => knownIds[id] ;
 
 // const matcher = id => {
+//   let result;
+//   const file = inputCsvFiles[0];
 //
+//   redisClient.sadd("id", id);
+//   await redisClient.sinter(file, "id")
+//     .then (match => {
+//       result = match;
+//     })
+//     .catch (err => {console.log(err);})
+//   return result;
 // }
-
 
 module.exports = { matcher }
