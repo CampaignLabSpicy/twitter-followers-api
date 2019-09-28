@@ -1,20 +1,18 @@
 const fs = require('fs')
 const path = require('path')
 
-const folders = fs.readdirSync(path.join(__dirname, 'data'))
+const files = fs.readdirSync(path.join(__dirname, 'data')).filter(file => file.indexOf('.') > -1)
+const allIds = {}
 
-const knownIds = {}
-
-for (const folder of folders) {
-  const files = fs.readdirSync(path.join(__dirname, 'data', folder))
-  for (const file of files) {
-    const fileContents = fs.readFileSync(path.join(__dirname, 'data', folder, file), 'utf8')
-    const lines = fileContents.split(/\r?\n/)
-    for (const line of lines) {
-      const id = line.trim()
-      knownIds[id] = true
+for (const file of files) {
+  const fileContents = fs.readFileSync(path.join(__dirname, 'data', file), 'utf8')
+  const ids = fileContents.split(/\r?\n/)
+  for (const id of ids) {
+    if (!allIds[id]) {
+      allIds[id] = 0
     }
+    allIds[id]++
   }
 }
 
-module.exports = knownIds
+module.exports = allIds
