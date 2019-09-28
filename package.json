@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node server",
     "dev": "nodemon server",
+    "matcher": "node matcher.js",
     "test": "echo \"Error: no test specified\" && exit 1"
-  }, 
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
