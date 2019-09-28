@@ -83,12 +83,8 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
-<<<<<<< HEAD
         // console.log('React detected')
         return res.redirect(_reactFrontEnd)
-=======
-        return res.redirect('https://knowyourfollowers.org')
->>>>>>> fef5d861f320eefd5b64c94819a0f7885b5dd793
       }
       res.redirect('/home')
     }
