@@ -39,10 +39,10 @@ app.use(cors({
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
-const _reactFrontEnd = process.env.REACT_APP_FRONTEND
+const _origins = (process.env.ACCESS_CONTROL_ALLOW_ORIGINS || '').split(',')
 
 app.use(cors({
-  origin: _reactFrontEnd,
+  origin: _origins,
   credentials: true
 }))
 
@@ -72,6 +72,7 @@ app.get('/sessions/connect', function (req, res) {
     if (error) {
       res.send('Error getting OAuth request token : ' + inspect(error), 500)
     } else {
+      req.session.origin = req.headers.referer || req.headers.origin
       req.session.oauthRequestToken = oauthToken
       req.session.oauthRequestTokenSecret = oauthTokenSecret
       req.session.client = req.query.client
@@ -88,8 +89,8 @@ app.get('/sessions/callback', function (req, res) {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
-        console.log('React detected')
-        return res.redirect(_reactFrontEnd)
+        console.log('React detected', req.session.origin)
+        return res.redirect(req.session.origin)
       }
       res.redirect('/home')
     }
