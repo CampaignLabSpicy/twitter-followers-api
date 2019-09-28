@@ -120,23 +120,18 @@ app.get('/test', (req, res) => {
   let pageCount = 0
   const name = req.session.screenName
   const retrieveUsers = (parameters) => {
-    console.log('retrive', pageCount + 1)
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
-        retrieveUsers({
-          screen_name: name,
-          cursor: data.next_cursor
-        })
-        // ids.push(data.ids)
-        // if (data.next_cursor !== 0 && pageCount < 15) {
-        //   pageCount++
-        //   retrieveUsers({
-        //     screen_name: name,
-        //     cursor: data.next_cursor
-        //   })
-        // } else {
-        //   res.send(ids)
-        // }
+        ids.push(data.ids)
+        if (data.next_cursor !== 0 && pageCount < 15) {
+          pageCount++
+          retrieveUsers({
+            screen_name: name,
+            cursor: data.next_cursor
+          })
+        } else {
+          res.send(ids)
+        }
       } else {
         res.status(500).send(error)
       }
