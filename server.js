@@ -28,7 +28,7 @@ const cors = require('cors')
 const Twitter = require('twitter')
 require('dotenv').config()
 
-const matcher = require('./matcher')
+const { matcher } = require('./matcher')
 
 const app = express()
 // Check cors permissions before production
