@@ -26,7 +26,7 @@ const inspect = require('util-inspect')
 const oauth = require('oauth')
 const cors = require('cors')
 const Twitter = require('twitter')
-require('dotenv').config()
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 
 const app = express()
 // Check cors permissions before production
