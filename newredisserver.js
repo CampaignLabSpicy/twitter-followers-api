@@ -5,7 +5,11 @@ const redisBinaryPath = '/usr/bin/redis-server';
 // more sensible install path
 // const redisBinaryPath = '/opt/local/bin/redis-server';
 let redisPort;
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> master
 const server = new RedisServer({
   port: 6379,
   bin: redisBinaryPath
