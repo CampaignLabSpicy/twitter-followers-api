@@ -10,6 +10,8 @@ const { newRedisServer, redisPort, waitingForRedisServer, shutdownRedis } = requ
   redisServer = newRedisServer();
 
 const inputCsvFiles = ['data/PeoplesMomentum_followers.csv'];
+const csvOptions = { headers : ['follower'] };                   // impose this header on headerless data
+const csvParseOverride = set=> data=> set.push(data.follower);   // to parse data with header
 
 
 client.on("error", err=> {
@@ -30,22 +32,23 @@ const testConnectionSync = ()=> {
 };
 
 const loadStaticData = inputCsvFiles=> {
+  let count=0;
   const comparatorSets = inputCsvFiles
     .map (file =>
       new Promise ((resolve, reject)=> {
+        let set=[];
         fs.createReadStream(file)
-          .pipe(csvParse())
-          .on('data', (data) => comparatorSets.push(data))
+          .pipe(csvParse(csvOptions))
+          .on('data', csvParseOverride(set) || (data=> set.push(data)))
           .on('end', () => {
-            console.log(comparatorSets);
-            resolve (comparatorSets);
+            resolve (set);
           });
       })
     );
-  console.log(comparatorSets);
+  console.log('>',comparatorSets);
   console.log(`${comparatorSets.length} file(s) opened: ${comparatorSets.join(', ')}`);
   return comparatorSets
 }
 
 loadStaticData(inputCsvFiles)[0]
-  .then (results=> {console.log(results);})
+  .then (results=> {})
