@@ -47,7 +47,7 @@ const PORT = process.env.PORT || 3000
 
 const consumer = new oauth.OAuth(
   'https://twitter.com/oauth/request_token', 'https://twitter.com/oauth/access_token',
-  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', TWITTER_CALLBACK_URL, 'HMAC-SHA1')
+  _twitterConsumerKey, _twitterConsumerSecret, '1.0A', _twitterCallbackUrl, 'HMAC-SHA1')
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
