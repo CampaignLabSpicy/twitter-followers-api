@@ -3,3 +3,6 @@ log
 .idea
 .env
 .DS_Store
+
+*.rdb
+data/

@@ -26,16 +26,16 @@ const inspect = require('util-inspect')
 const oauth = require('oauth')
 const cors = require('cors')
 const Twitter = require('twitter')
-if (process.env.NODE_ENV !== 'production') require('dotenv').config()
+require('dotenv').config()
 
 const app = express()
 // Check cors permissions before production
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:8080']
+  origin: 'http://localhost:3000',
+  credentials: true
 }))
 
 // Get your credentials here: https://dev.twitter.com/apps
-console.log(process.env);
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
 const _twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET
 const _twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL
@@ -70,31 +70,25 @@ app.get('/sessions/connect', function (req, res) {
       req.session.oauthRequestToken = oauthToken
       req.session.oauthRequestTokenSecret = oauthTokenSecret
       req.session.client = req.query.client
-
-      // console.log('Double check on 2nd step')
-      // console.log('------------------------')
-      // console.log('<<' + req.session.oauthRequestToken)
-      // console.log('<<' + req.session.oauthRequestTokenSecret)
       res.redirect('https://twitter.com/oauth/authorize?oauth_token=' + req.session.oauthRequestToken)
     }
   })
 })
 
 app.get('/sessions/callback', function (req, res) {
-  // console.log('------------------------')
-  // console.log(JSON.stringify(req.session, null, 4))
-  // console.log('>>' + req.session.oauthRequestToken)
-  // console.log('>>' + req.session.oauthRequestTokenSecret)
-  // console.log('>>' + req.query.oauth_verifier)
-  consumer.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier, function (error, oauthAccessToken, oauthAccessTokenSecret, results) {
+   consumer.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier, function (error, oauthAccessToken, oauthAccessTokenSecret, results) {
     if (error) {
       res.send('Error getting OAuth access token : ' + inspect(error) + '[' + oauthAccessToken + ']' + '[' + oauthAccessTokenSecret + ']' + '[' + inspect(results) + ']', 500)
     } else {
       req.session.oauthAccessToken = oauthAccessToken
       req.session.oauthAccessTokenSecret = oauthAccessTokenSecret
       if (req.session.client === 'react') {
+<<<<<<< HEAD
         // console.log('React detected')
         return res.redirect(_reactFrontEnd)
+=======
+        return res.redirect('https://knowyourfollowers.org')
+>>>>>>> fef5d861f320eefd5b64c94819a0f7885b5dd793
       }
       res.redirect('/home')
     }
@@ -104,13 +98,9 @@ app.get('/sessions/callback', function (req, res) {
 app.get('/home', function (req, res) {
   consumer.get('https://api.twitter.com/1.1/account/verify_credentials.json', req.session.oauthAccessToken, req.session.oauthAccessTokenSecret, function (error, data, response) {
     if (error) {
-      console.log('/home error:', error);
       res.redirect('/sessions/connect')
     } else {
       const parsedData = JSON.parse(data)
-      // console.log('---------------------------------')
-      // console.log(JSON.stringify(parsedData, null, 4))
-      // console.log('---------------------------------')
       req.session.screenName = parsedData.screen_name
       res.send('You are signed in: ' + inspect(parsedData.screen_name))
     }
@@ -123,14 +113,13 @@ app.get('/test', (req, res) => {
     consumer_secret: _twitterConsumerSecret,
     access_token_key: req.session.oauthAccessToken,
     access_token_secret: req.session.oauthAccessTokenSecret
-  });
+  })
 
   let ids = []
   // 15 pages max
   let pageCount = 0
   const name = req.session.screenName
   const retrieveUsers = (parameters) => {
-      // console.log('Page 1 parameters:', parameters);
     twitterClient.get('followers/ids', parameters, function (error, data, response) {
       if (!error) {
         ids = ids.concat(data.ids)
@@ -145,7 +134,7 @@ app.get('/test', (req, res) => {
           res.send({ total: ids.length, matched: matchedIds.length })
         }
       } else {
-        res.status(500).send(error)
+        res.status(response.statusCode).send(error.message)
       }
     })
   }
@@ -170,5 +159,5 @@ app.get('*', function (req, res) {
 })
 
 app.listen(PORT, function () {
-  console.log(`App runining on port ${PORT}!`)
+  console.log('App running on port ' + PORT + '!')
 })
