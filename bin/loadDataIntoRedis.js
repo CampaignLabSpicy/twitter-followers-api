@@ -13,7 +13,7 @@ const sadd = promisify(client.sadd).bind(client)
 const quit = promisify(client.quit).bind(client)
 
 const dataDir = path.join(__dirname, '..', 'data')
-const files = fs.readdirSync(dataDir).filter(file => file.indexOf('.') > -1)
+const files = fs.readdirSync(dataDir).filter(file => file.indexOf('.') > 0) // Use > 0 to ignore hidden files (start with .)
 
 debug('Loading data into Redis')
 
