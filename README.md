@@ -11,11 +11,11 @@ Browse to `http://localhost:8080/` and authorise the app.
 
 ### Redis (Optional)
 
-Enable Redis by setting the `REDIS_SERVER_URL` environment variable, typically in `.env`.
+Enable Redis by setting the `REDIS_URL` environment variable, typically in `.env`.
 
 #### Remote Server
 
-Get the credentials from Heroku. Make sure to amend the remote `REDIS_SERVER_URL` to use the development database, which
+Get the credentials from Heroku. Make sure to amend the remote `REDIS_URL` to use the development database, which
 is number `0` &mdash; **i.e. DELETE the `/1` from the end of the url**.
 
 #### Local Server (Optional)

@@ -9,7 +9,7 @@ const redis = require('redis')
 const connectRedis = require('connect-redis')
 
 const getSessionStore = () => {
-  if (!process.env.REDIS_SERVER_URL) {
+  if (!process.env.REDIS_URL) {
     debug('Using MemoryStore')
     return new session.MemoryStore()
   }

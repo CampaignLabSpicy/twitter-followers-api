@@ -8,7 +8,7 @@ const { promisify } = require('util')
 const redis = require('redis')
 const _ = require('lodash')
 
-const client = redis.createClient({ url: process.env.REDIS_SERVER_URL })
+const client = redis.createClient({ url: process.env.REDIS_URL })
 const sadd = promisify(client.sadd).bind(client)
 const quit = promisify(client.quit).bind(client)
 

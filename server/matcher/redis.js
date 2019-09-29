@@ -3,7 +3,7 @@ const debug = require('debug')('kyf:matcher:redis')
 const redis = require('redis')
 const { promisify } = require('util')
 
-const client = redis.createClient({ url: process.env.REDIS_SERVER_URL })
+const client = redis.createClient({ url: process.env.REDIS_URL })
 const smembers = promisify(client.smembers).bind(client)
 const sadd = promisify(client.sadd).bind(client)
 const sinter = promisify(client.sinter).bind(client)
