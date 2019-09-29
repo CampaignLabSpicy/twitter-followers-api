@@ -1,5 +1,9 @@
 require('dotenv').config()
 
+/**
+ * Code to combine all the follower lists in the data directory into a single CSV for each account.
+ */
+
 const debug = require('debug')('kyf:data:process')
 
 const fs = require('fs')

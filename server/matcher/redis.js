@@ -14,7 +14,7 @@ module.exports = async (ids) => {
   debug('Temporarily saving user follower ids')
   await sadd(tempKey, ids)
   const accounts = await smembers('accounts')
-  let allMatchingIds = {}
+  const allMatchingIds = {}
   for (const account of accounts) {
     debug('Matching against', account)
     const matched = await sinter(tempKey, `${account}:followers`)

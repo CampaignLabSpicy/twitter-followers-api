@@ -2,9 +2,9 @@ require('dotenv').config()
 
 const debug = require('debug')('kyf:redis-server:load-data')
 
-const fs = require('fs');
-const path = require('path');
-const { promisify } = require('util');
+const fs = require('fs')
+const path = require('path')
+const { promisify } = require('util')
 const redis = require('redis')
 const _ = require('lodash')
 
