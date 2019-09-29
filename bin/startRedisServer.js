@@ -2,6 +2,10 @@ require('dotenv').config()
 
 const debug = require('debug')('kyf:redis-server')
 
+/**
+ * Start a local Redis server. Requires Redis installed on your machine.
+ */
+
 const RedisServer = require('redis-server')
 const fs = require('fs')
 const redisBinaryPath = process.env.LOCAL_REDIS_BINARY
