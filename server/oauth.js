@@ -1,5 +1,11 @@
 const debug = require('debug')('kyf:oauth')
 
+/**
+ * Promisify and encapsulate OAuth functions so that they can be used more simply and without callbacks, e.g.:
+ *
+ *     const results = await oauth.getRequestToken()
+ */
+
 const { OAuth } = require('oauth')
 
 const consumer = new OAuth(
