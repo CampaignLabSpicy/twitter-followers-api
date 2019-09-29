@@ -31,11 +31,6 @@ require('dotenv').config()
 const { matcher } = require('./matcher')
 
 const app = express()
-// Check cors permissions before production
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}))
 
 // Get your credentials here: https://dev.twitter.com/apps
 const _twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY
@@ -134,7 +129,8 @@ app.get('/test', (req, res) => {
             cursor: data.next_cursor
           })
         } else {
-          const matchedIds = ids.filter(matcher)
+          // const matchedIds = ids.filter(matcher)
+          const matchedIds = ids.filter(id => knownIds[id])
           res.send({ total: ids.length, matched: matchedIds.length })
         }
       } else {

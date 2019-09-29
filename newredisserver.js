@@ -1,7 +1,7 @@
 const RedisServer = require('redis-server');
 const fs = require('fs');
 // home Ubuntu default apt install path
-const redisBinaryPath = '/usr/bin/redis-server';
+const redisBinaryPath = '/usr/local/bin/redis-server';
 // more sensible install path
 // const redisBinaryPath = '/opt/local/bin/redis-server';
 let redisPort;
@@ -10,7 +10,7 @@ const server = new RedisServer({
   port: 6379,
   bin: redisBinaryPath
 });
-console.log(server);
+// console.log(server);
 
 try {
   if (!fs.existsSync(redisBinaryPath)) {
@@ -22,8 +22,8 @@ try {
 
 server.open()
   .then(() => {
-    console.log(server);
-    console.log(`Ready for connection to the Redis server bound to ${server.config.port}.`);
+    // console.log(server);
+    // console.log(`Ready for connection to the Redis server bound to ${server.config.port}.`);
     redisPort = server.config.port || 'unknown';
   })
   .catch((err) => {

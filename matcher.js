@@ -1,10 +1,9 @@
 const csvParse = require('csv-parser');
 const fs = require('fs');
+require('dotenv').config()
 
 const redis = require('redis'),
-  redisClient = redis.createClient();
-// if you'd like to select database 3, instead of 0 (default), call
-// client.select(3, function() { /* ... */ });
+redisClient = redis.createClient();
 
 const { newRedisServer, redisPort, waitingForRedisServer, shutdownRedis } = require ('./newredisserver'),
   redisServer = newRedisServer();
@@ -46,18 +45,22 @@ const loadStaticData = inputCsvFiles=> {
         });
     })
   );
-  // console.log('>',comparatorSets);
+  console.log('>',comparatorSets);
   // console.log(`${comparatorSets.length} file(s) opened: ${comparatorSets.join(', ')}`);
-  // return comparatorSets
-  return inputCsvFiles.map (file => redisClient.smembers(file) );
+  return comparatorSets
+  // return inputCsvFiles.map (file => redisClient.smembers(file) );
 }
 
 Promise.all(loadStaticData(inputCsvFiles))
-  .then (results=>
-    results.forEach (result=> {
+  .then (results => {
+
+    console.log(results)
+    results.forEach(result=> {
       console.log(result);
-      console.log(`loaded ${result.length}`);
-    }))
+      console.log(`loaded ${result}`);
+    })
+
+  })
   // .then (()=> shutdownRedis());
 
 const matcher = id => knownIds[id] ;
