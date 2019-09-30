@@ -5,28 +5,32 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
-    "dev": "nodemon server",
+    "dev": "nodemon -w server server",
     "matcher": "node matcher.js",
+    "lint": "standard --fix \"server/**/*.js\" \"bin/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.19.0",
+    "connect-redis": "^4.0.2",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
-    "csv-parser": "^2.3.1",
+    "debug": "^4.1.1",
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
-    "express-logger": "0.0.3",
     "express-session": "^1.16.2",
+    "lodash": "^4.17.15",
+    "morgan": "^1.9.1",
     "oauth": "^0.9.15",
     "redis": "^2.8.0",
     "redis-server": "^1.2.2",
-    "twitter": "^1.7.1",
+    "twit": "^2.2.11",
     "util-inspect": "^0.1.8"
   },
   "devDependencies": {
-    "nodemon": "^1.19.2"
+    "nodemon": "^1.19.2",
+    "standard": "^14.3.1"
   }
 }
