@@ -5,18 +5,27 @@ const debug = require('debug')('kyf:session')
  */
 
 const session = require('express-session')
-const redis = require('redis')
 const connectRedis = require('connect-redis')
 
 const getSessionStore = () => {
-  if (!process.env.REDIS_URL) {
-    debug('Using MemoryStore')
-    return new session.MemoryStore()
-  }
+  const sessionStorage = process.env.SESSION_STORAGE || 'memory'
 
-  debug('Using RedisStore')
+  debug('Session storage: ' + sessionStorage)
+
+  switch (sessionStorage) {
+    case 'redis':
+      debug('Using RedisStore')
+      return getRedisStore()
+    case 'memory':
+    default:
+      debug('Using MemoryStore')
+      return new session.MemoryStore()
+  }
+}
+
+const getRedisStore = () => {
   const RedisStore = connectRedis(session)
-  const client = redis.createClient()
+  const client = require('./services/redisClient')._client
   return new RedisStore({ client })
 }
 

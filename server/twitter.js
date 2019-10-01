@@ -17,7 +17,7 @@ module.exports = {
     let ids = []
     // 15 pages max
     let pageCount = 0
-    const parameters = { screen_name: screenName }
+    const parameters = { screen_name: screenName, stringify_ids: true }
     while (pageCount < 14) {
       const { data } = await twitterClient.get('followers/ids', parameters)
       ids = ids.concat(data.ids)
