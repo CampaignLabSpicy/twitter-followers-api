@@ -17,6 +17,7 @@ module.exports = {
     let ids = []
     // 15 pages max
     let pageCount = 0
+    // Stringify IDs as JavaScript might not have enough precision to store twitter ids as numbers
     const parameters = { screen_name: screenName, stringify_ids: true }
     while (pageCount < 14) {
       const { data } = await twitterClient.get('followers/ids', parameters)
