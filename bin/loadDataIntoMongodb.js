@@ -55,8 +55,17 @@ const loadData = async () => {
     const chunks = _.chunk(ids, 10000)
     let processed = 0
     for (const chunk of chunks) {
+      // Create a bulk operation to load the data more efficiently
       const bulk = followers.initializeUnorderedBulkOp()
       for (const id of chunk) {
+        /**
+         * Create an 'upsert' operation for a document with the given id.
+         *
+         * If a matching document is found in the database, it is updated by adding the
+         * current twitterName to its friends array. If the document is not found,
+         * it is inserted with the friends array containing just the current twitterName.
+         *
+         */
         bulk
           .find({ id })
           .upsert()
