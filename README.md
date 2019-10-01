@@ -39,7 +39,7 @@ local `redis-server` executable file.
 
 ### MongoDB (Optional)
 
-Enable MongoDB for data storage by setting `DATA_STORAGE=mongodb` and `MONGODB_URL` in your environment.
+Enable MongoDB for data storage by setting `DATA_STORAGE=mongodb` and `MONGODB_URI` in your environment.
 
 #### Load data into MongoDB
 
