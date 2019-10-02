@@ -17,37 +17,36 @@ debug('Loading data into MongoDB')
  * Load data into MongoDB. Builds a collection 'followers':
  *
  *   {
- *     id: String,      // Twitter user id
- *     friends: Array   // The key accounts followed by this user
+ *     _id: String,            // Twitter user id. Overwrite default MongoDB _id to save space
+ *     TODO: Reinstate the friends array when we have space
+ *     friends: Array<String>  // The key accounts followed by this user.
  *   }
  *
- * E.G.:
- *
- *   {
- *     id: '45349857',
- *     friends: ['jeremycorbyn', 'UKLabour']
- *   }
- *
- * We can then find the crossover between the logged-in user's followers and our
+ * We can find the crossover between the logged-in user's followers and our
  * saved followers using:
  *
- *   db.followers.find({ id: { $in: userFollowerIds } }
+ *   const matchedFollowers = await db.followers.find({ _id: { $in: userFollowerIds } }).toArray()
  *
  * See server/matcher/mongodb.js for concrete use.
  */
 
 const loadData = async () => {
   const db = await mongodb.getDb()
-  const followers = db.collection('followers')
-  // Reset collection
-  await followers.drop()
-  // Index is *essential*, otherwise operations take far too long
-  await followers.createIndex({ id: 1 }, { unique: true })
+  const followersCollection = db.collection('followers')
+
+  // Reset collections
+  try {
+    await followersCollection.drop()
+  } catch (e) {
+    debug('Warning: ' + e.message)
+  }
+
   // Iterate over the CSV files in the data directory
   for (const file of files) {
     debug('Loading ' + file)
     // Get the Twitter name from the filename
-    const twitterName = file.split('_followers')[0]
+    // TODO: Save the keyAccountName against the follower when we have space
+    // const keyAccountName = file.split('_followers')[0]
     // Get the follower ids from the CSV
     const fileContents = fs.readFileSync(path.join(dataDir, file), 'utf8')
     const ids = fileContents.split(/\r?\n/)
@@ -56,8 +55,8 @@ const loadData = async () => {
     let processed = 0
     for (const chunk of chunks) {
       // Create a bulk operation to load the data more efficiently
-      const bulk = followers.initializeUnorderedBulkOp()
-      for (const id of chunk) {
+      const bulk = followersCollection.initializeUnorderedBulkOp()
+      for (const _id of chunk) {
         /**
          * Create an 'upsert' operation for a document with the given id.
          *
@@ -67,10 +66,11 @@ const loadData = async () => {
          *
          */
         bulk
-          .find({ id })
+          .find({ _id })
           .upsert()
           .updateOne(
-            { $push: { friends: twitterName } }
+            // TODO: Store the keyAccountName when we have enough database space, or find an alternative method
+            {} // { $addToSet: { friends: keyAccountName } }
           )
       }
       await bulk.execute()
