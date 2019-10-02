@@ -32,11 +32,11 @@ debug('Loading data into MongoDB')
 
 const loadData = async () => {
   const db = await mongodb.getDb()
-  const followersCollection = db.collection('followers')
+  const accountsCollection = db.collection('accounts')
 
   // Reset collections
   try {
-    await followersCollection.drop()
+    await accountsCollection.drop()
   } catch (e) {
     debug('Warning: ' + e.message)
   }
@@ -46,34 +46,18 @@ const loadData = async () => {
     debug('Loading ' + file)
     // Get the Twitter name from the filename
     // TODO: Save the keyAccountName against the follower when we have space
-    // const keyAccountName = file.split('_followers')[0]
+    const twitterName = file.split('_followers')[0]
     // Get the follower ids from the CSV
     const fileContents = fs.readFileSync(path.join(dataDir, file), 'utf8')
     const ids = fileContents.split(/\r?\n/)
     // Process the IDs in chunks to avoid sending too much data at once
-    const chunks = _.chunk(ids, 10000)
+    const chunks = _.chunk(ids, 100000)
     let processed = 0
     for (const chunk of chunks) {
-      // Create a bulk operation to load the data more efficiently
-      const bulk = followersCollection.initializeUnorderedBulkOp()
-      for (const _id of chunk) {
-        /**
-         * Create an 'upsert' operation for a document with the given id.
-         *
-         * If a matching document is found in the database, it is updated by adding the
-         * current twitterName to its friends array. If the document is not found,
-         * it is inserted with the friends array containing just the current twitterName.
-         *
-         */
-        bulk
-          .find({ _id })
-          .upsert()
-          .updateOne(
-            // TODO: Store the keyAccountName when we have enough database space, or find an alternative method
-            {} // { $addToSet: { friends: keyAccountName } }
-          )
-      }
-      await bulk.execute()
+      await accountsCollection.insertOne({
+        name: twitterName,
+        followers: chunk
+      })
       processed = processed + chunk.length
       debug('Loaded ' + Math.round(processed * 100 / ids.length) + '% (' + processed + '/' + ids.length + ')')
     }
