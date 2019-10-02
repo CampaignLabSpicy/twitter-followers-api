@@ -18,7 +18,6 @@ debug('Loading data into MongoDB')
  *
  *   {
  *     _id: String,            // Twitter user id. Overwrite default MongoDB _id to save space
- *     TODO: Reinstate the friends array when we have space
  *     friends: Array<String>  // The key accounts followed by this user.
  *   }
  *
@@ -69,7 +68,6 @@ const loadData = async () => {
           .find({ _id })
           .upsert()
           .updateOne(
-            // TODO: Store the keyAccountName when we have enough database space, or find an alternative method
             { $addToSet: { friends: keyAccountName } }
           )
       }
