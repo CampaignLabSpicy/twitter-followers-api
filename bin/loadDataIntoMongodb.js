@@ -46,7 +46,7 @@ const loadData = async () => {
     debug('Loading ' + file)
     // Get the Twitter name from the filename
     // TODO: Save the keyAccountName against the follower when we have space
-    // const keyAccountName = file.split('_followers')[0]
+    const keyAccountName = file.split('_followers')[0]
     // Get the follower ids from the CSV
     const fileContents = fs.readFileSync(path.join(dataDir, file), 'utf8')
     const ids = fileContents.split(/\r?\n/)
@@ -70,7 +70,7 @@ const loadData = async () => {
           .upsert()
           .updateOne(
             // TODO: Store the keyAccountName when we have enough database space, or find an alternative method
-            {} // { $addToSet: { friends: keyAccountName } }
+            { $addToSet: { friends: keyAccountName } }
           )
       }
       await bulk.execute()
