@@ -1,20 +1,15 @@
 require('dotenv').config()
 
-const debug = require('debug')('kyf:redis-server:load-data')
+const debug = require('debug')('kyf:redis-server:load-data:redis')
 
 const fs = require('fs')
 const path = require('path')
-const { promisify } = require('util')
-const redis = require('redis')
 const _ = require('lodash')
 
-const client = redis.createClient({ url: process.env.REDIS_URL })
-// sadd: add items to a set
-const sadd = promisify(client.sadd).bind(client)
-const quit = promisify(client.quit).bind(client)
+const redisClient = require('../server/services/redisClient')
 
 const dataDir = path.join(__dirname, '..', 'data')
-const files = fs.readdirSync(dataDir).filter(file => file.indexOf('.') > 0) // Use > 0 to ignore hidden files (start with .)
+const files = fs.readdirSync(dataDir).filter(file => file.indexOf('.csv') > -1)
 
 debug('Loading data into Redis')
 
@@ -31,15 +26,15 @@ const loadData = async () => {
     const chunks = _.chunk(ids, 1000000)
     for (const chunk of chunks) {
       // Add follower ids to a set e.g. 'jeremycorbyn:followers'
-      await sadd(`${twitterName}:followers`, chunk)
+      await redisClient.sadd(`${twitterName}:followers`, chunk)
       debug('Loaded ' + chunk.length)
     }
     // save the processed account to the 'accounts' set
-    await sadd('accounts', twitterName)
+    await redisClient.sadd('accounts', twitterName)
     debug('Loaded ' + file)
   }
 
-  await quit()
+  await redisClient.quit()
   debug('Done')
 }
 

@@ -6,4 +6,4 @@ log
 
 *.rdb
 data/*
-!data/*.csv
+!data/.gitkeep
