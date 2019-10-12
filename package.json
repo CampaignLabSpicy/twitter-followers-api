@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
-    "dev": "nodemon -w server server",
+    "dev": "nodemon server",
     "matcher": "node matcher.js",
     "lint": "standard --fix \"server/**/*.js\" \"bin/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -14,6 +14,7 @@ const oauth = require('./oauth')
 const twitter = require('./twitter')
 const matcher = require('./matcher')
 const sessionStore = require('./sessionStore')
+const { emptyLocationObject, populateLocationObject } = require('./location')
 
 const app = express()
 app.use(logger('tiny', { stream: { write: msg => debug(msg.trim()) } }))
@@ -92,12 +93,46 @@ app.get('/api', async (req, res) => {
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
+    console.log(userData);
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
     res.send({ total: followerIds.length, matched: matchedIds.length })
   } catch (e) {
     res.status(e.statusCode || 500).send(e.message)
   }
+})
+
+app.get('/withlocation', async (req, res) => {
+  const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
+  if (!userData) {
+    return res.status(403).send('You are not logged in with Twitter')
+  }
+  try {
+    let location =
+      (userData.location === '') ?
+        emptyLocationObject
+        : await populateLocationObject (userData.location, { useGoogle : true} )
+
+    if (location.specificity < 2)
+      res.redirect(200, '/your_location_helps')
+    if (location.specificity < 5)
+      res.redirect(200, '/location_map')
+
+
+    const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
+    const matchedIds = await matcher(followerIds)
+    res.send({ total: followerIds.length, matched: matchedIds.length })
+  } catch (e) {
+    res.status(e.statusCode || 500).send(e.message)
+  }
+})
+
+app.get('/your_location_helps', async (req, res) => {
+  res.status(500).send('Not implemented')
+})
+
+app.get('/location_map', async (req, res) => {
+  res.status(500).send('Not implemented')
 })
 
 app.get('*', function (req, res) {
