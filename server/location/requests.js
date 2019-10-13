@@ -1,5 +1,5 @@
 
-// const PostcodesIO = require('postcodesio-client');
+const PostcodesIO = require('postcodesio-client');
 // const postcodesIo = new PostcodesIO('https://api.postcodes.io')
 const postcodesIo = require('node-postcodes.io')
 
@@ -25,12 +25,23 @@ const recursiveProcessor = (fields, result, report) =>  {
   }
   else if (typeof fields === 'object') {
     Object.keys(fields).forEach (key =>  {
+const postcodesIo = new PostcodesIO('https://api.postcodes.io')
       report[key] = {};
       recursiveProcessor(fields[key], result[key], report[key])
     })
   }
-
 }
+
+const handle404 = result => {
+  if (result===null || result.status===404)
+    console.log('should throw');
+  if (result===null)
+    throw new Error(`lookup request fail - 404`);
+  if (result.status===404)
+    throw new Error(`lookup request fail ${result.status}`);
+  return result
+};
+
 
 // NB there is a choice of two wrapper modules for Postcodes.io.
 // node-postcodes.io is more powerful, but requires this shim.
@@ -47,19 +58,21 @@ const fromPostcodesIo = (location,
   fieldProcessors = postcodesIoDefaultFieldProcessors
 )=> {
   const report = {};
-  
+
   postcodesIo
   	.lookup(location)
     .then (nodePostcodesIoResultsShim)
-    .then (result => result[0] || result)
-  	.then (info=> {
+    .then (handle404)
+    .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
+    .then (handle404) // repeated for the unpacked array result
+    .then (info=> {
   		console.log(info);
       recursiveProcessor (desiredFields, info, report);
       console.log(report);
       fieldProcessors.forEach (processor=> {processor(info, report)} );
       console.log(report);
   	})
-    // TODO:
+    // TODO: distinguish errors
     .catch (err=> { console.log(err);})
 
   return report
@@ -83,7 +96,8 @@ const fromTwitter = async (location, twitterData )=> {
 
 
 // fromPostcodesIo ('PO123AA')
-fromPostcodesIo (['PO123AA', 'PO123AB'])
+// fromPostcodesIo ('XX99 3AA')
+fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
 
 
 module.exports = { fromPostcodesIo, fromGoogle, fromTwitter }
