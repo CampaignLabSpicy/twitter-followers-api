@@ -1,7 +1,7 @@
 const debug = require('debug')('kyf:matcher');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
-postcodeFromString, latLongFromString, roundToNearest } = require ('./helpers');
+postcodeFromString, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
 const { fromPostcodesIo, fromGoogle, fromTwitter } = require ('./requests');
 
 const emptyLocationObject = {
@@ -9,6 +9,14 @@ const emptyLocationObject = {
   twitterString  :''
 };
 const noVerify = { verify : false };
+
+const locationInfoFromPostcode = async location=> {
+
+  // TODO: check postcodes via local .csv files first
+
+  return await fromPostcodesIo(location)
+}
+
 
 const cache = {
   size : 0,
@@ -31,36 +39,44 @@ const cache = {
   put : (location, result, options={ verify:true } ) => {
     if (options.verify)
       location = cache.canonicalise(location);
-    cache.location = result;
-    cach.size++;
+    cache[location] = result;
+    cache.size++;
   },
 
   get : (location, options={ verify:true } ) => {
     if (options.verify)
       location = cache.canonicalise(location);
-    return cache.location;
+    return cache[location];
   }
 
 }
 
-const populateLocationObject = async (location, options) => {
+const populateLocationObject = async (location, options={} ) => {
   const result = {
     specificity : 0,
     twitterString  : location
   };
   location = cache.canonicalise(location);
 
-  if (cache.location)
+  if (cache[location])
     return cache.get(location, noVerify)
 
-  if (isFullPostcode(location)) {
-    const info = locationInfoFromPostcode(location)
+  if (isFullPostcode(location))
+    try {
+      const info = await locationInfoFromPostcode(location)
 
-    /// process info
+      /// process info
+      Object.assign (result, info);
 
-    cache.put(location, result, noVerify);
-    return result
-  }
+      cache.put(location, result, noVerify);
+      return result
+    }
+    catch (err) {
+      if (err.message.endsWith('404')) {
+        return emptyLocationObject
+      }
+      console.log(err);
+    }
 
   if (latLongFrom4dpLatLongString(location)) {
     const info = locationInfoFromLatLong(location)
@@ -81,5 +97,16 @@ const populateLocationObject = async (location, options) => {
 
   return result;
 };
+
+const testThis = async ()=>  {
+  await Promise.all ([
+    populateLocationObject ('PO123AA'),
+    populateLocationObject ('PO12'),
+    populateLocationObject ('XX99 3AA')
+  ]);
+  console.log(cache);
+}
+
+testThis()
 
 module.exports = { emptyLocationObject, populateLocationObject }

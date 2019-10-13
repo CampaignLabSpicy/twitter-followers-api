@@ -76,11 +76,11 @@ const latLongFrom4dpLatLongString = latLong => {
   const groups = latLong.match(is4dplatLongRegExp);
   if (!groups)
     return null;
-  const [_, northing, _,  easting] = groups;
+  const [, northing, , easting] = groups;
   return [northing, easting]
 }
 
-const latLongIsInBritishIsles = [lat, long] => (
+const latLongIsInBritishIsles = ([lat, long]) => (
   lat < 2.28
   && 0.75*lat - 0.25*long> 37.9
   && 7.25*lat - 2.25*long > 366.6
@@ -97,5 +97,6 @@ const roundToNearest = unit => num =>
 
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
-  postcodeFromString, postcodeFromString, latLongFrom4dpLatLongString, roundToNearest, latLongIsInBritishIsles
+  postcodeFromString, postcodeFromString, latLongFromString, latLongFrom4dpLatLongString,
+  roundToNearest, latLongIsInBritishIsles
 }

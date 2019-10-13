@@ -53,27 +53,28 @@ const nodePostcodesIoResultsShim = result => {
   return result.result
 }
 
-const fromPostcodesIo = (location,
+const fromPostcodesIo = async (location,
   desiredFields = postcodesIoDefaultFields,
   fieldProcessors = postcodesIoDefaultFieldProcessors
 )=> {
   const report = {};
 
-  postcodesIo
+  await postcodesIo
   	.lookup(location)
     .then (nodePostcodesIoResultsShim)
     .then (handle404)
     .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
     .then (handle404) // repeated for the unpacked array result
     .then (info=> {
-  		console.log(info);
       recursiveProcessor (desiredFields, info, report);
-      console.log(report);
       fieldProcessors.forEach (processor=> {processor(info, report)} );
-      console.log(report);
   	})
     // TODO: distinguish errors
-    .catch (err=> { console.log(err);})
+    .catch (err=> {
+      if (err.message.endsWith('404'))
+        throw err;
+      console.log(err);
+    })
 
   return report
 }
@@ -94,10 +95,14 @@ const fromTwitter = async (location, twitterData )=> {
   return result
 }
 
+// If uncommented, these will be run when index.js imports the file.
+// They won;t output anything but will cause 404 errors, which won;t be caught, since
+// the try/ catch is in index.js
 
 // fromPostcodesIo ('PO123AA')
+// fromPostcodesIo ('PO12')
 // fromPostcodesIo ('XX99 3AA')
-fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
+// fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
 
 
 module.exports = { fromPostcodesIo, fromGoogle, fromTwitter }
