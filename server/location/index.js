@@ -19,7 +19,7 @@ const locationInfoFromPostcode = async location=> {
 
 
 const cache = {
-  size : 0,
+  records : 0,
 
   canonicalise : location => {
     const latLong = latLongFromString(location);
@@ -40,7 +40,7 @@ const cache = {
     if (options.verify)
       location = cache.canonicalise(location);
     cache[location] = result;
-    cache.size++;
+    cache.records++;
   },
 
   get : (location, options={ verify:true } ) => {
@@ -48,7 +48,6 @@ const cache = {
       location = cache.canonicalise(location);
     return cache[location];
   }
-
 }
 
 const populateLocationObject = async (location, options={} ) => {
@@ -97,6 +96,7 @@ const populateLocationObject = async (location, options={} ) => {
 
   return result;
 };
+
 
 const testThis = async ()=>  {
   await Promise.all ([
