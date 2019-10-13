@@ -2,6 +2,9 @@ const endsWithPostcodeRE = new RegExp(/([a-z|A-Z]{1,2}\d\w)\s?(\d[a-z|A-Z]{2})?\
 const pc7Regexp = new RegExp(/([a-z|A-Z]{1,2}\d\w)(\d[a-z|A-Z]{2})/);
 const pc8Regexp = new RegExp(/([a-z|A-Z]{1,2}\d\w) (\d[a-z|A-Z]{2})/);
 const pcdRegexp = new RegExp(/([a-z|A-Z]{1,2}\d\w)\s*$/);
+const latLongEastWestRegExp = new RegExp(/(.*)([NSns])(.*)([EWew])(.*)/);
+const latLongDigitsRegExp = new RegExp(/^\s*\(?\s*(\d*.\d*)\s*,\s*(\d*.\d*)\s*\)?\s*$/);
+const whitespaceRegExp = new RegExp(/(^\s+|\s+$)/g);
 
 // match pc7, pc8, pcd
 const isPc7 = pc => !!(pc.match(pc7Regexp))
@@ -41,4 +44,22 @@ const districtFromFullPostcode = pc => {
 const postcodeFromString = pc => {
   const [_, pcd, inwardCode] = pc.match(endsWithPostcodeRE);
   return (`${ pcd }${ inwardCode? ' '+inwardCode : '' }`).toUpperCase();
+}
+
+const latLongFromString = latLong => {
+  latLong = latLong.replace(whitespaceRegExp, '')
+  const eastWest = latLong.match(latLongEastWestRegExp);
+  if (eastWest)
+    latLong = `${eastWest[1]}${eastWest[3]}${eastWest[5]}`;
+  console.log('>',latLong);
+  let [_, northing, easting] = latLong.match(latLongDigitsRegExp);
+  northing = 1*northing;
+  easting = 1*easting;
+  if (eastWest) {
+    if (eastWest[2]==="S" || eastWest[2]==="s")
+      northing= -northing;
+    if (eastWest[4]==="W" || eastWest[4]==="w")
+      easting= -easting;
+  }
+  return [northing, easting]
 }
