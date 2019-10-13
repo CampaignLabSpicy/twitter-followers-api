@@ -1,6 +1,7 @@
 
-const PostcodesIO = require('postcodesio-client');
-const postcodesIo = new PostcodesIO('https://api.postcodes.io')
+// const PostcodesIO = require('postcodesio-client');
+// const postcodesIo = new PostcodesIO('https://api.postcodes.io')
+const postcodesIo = require('node-postcodes.io')
 
 // Use these two config consts to take the data out of the XHR's result object,
 // in order to limit the info to be passed back to the cache.
@@ -31,13 +32,26 @@ const recursiveProcessor = (fields, result, report) =>  {
 
 }
 
+// NB there is a choice of two wrapper modules for Postcodes.io.
+// node-postcodes.io is more powerful, but requires this shim.
+const nodePostcodesIoResultsShim = result => {
+  if (result.status !== 200)
+    throw new Error(`HTTP request fail ${result.status}`);
+  if (Array.isArray (result.result))
+    return result.result.map (result=> result.result)   // Sorry, couldn't resist it ;)
+  return result.result
+}
+
 const fromPostcodesIo = (location,
   desiredFields = postcodesIoDefaultFields,
   fieldProcessors = postcodesIoDefaultFieldProcessors
 )=> {
   const report = {};
+  
   postcodesIo
   	.lookup(location)
+    .then (nodePostcodesIoResultsShim)
+    .then (result => result[0] || result)
   	.then (info=> {
   		console.log(info);
       recursiveProcessor (desiredFields, info, report);
@@ -68,7 +82,8 @@ const fromTwitter = async (location, twitterData )=> {
 }
 
 
-fromPostcodesIo ('EC1V 9LB')
+// fromPostcodesIo ('PO123AA')
+fromPostcodesIo (['PO123AA', 'PO123AB'])
 
 
 module.exports = { fromPostcodesIo, fromGoogle, fromTwitter }

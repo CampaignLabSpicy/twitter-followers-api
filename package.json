@@ -24,6 +24,7 @@
     "lodash": "^4.17.15",
     "mongodb": "^3.3.2",
     "morgan": "^1.9.1",
+    "node-postcodes.io": "^1.0.0",
     "oauth": "^0.9.15",
     "postcodesio-client": "^0.3.4",
     "redis": "^2.8.0",
