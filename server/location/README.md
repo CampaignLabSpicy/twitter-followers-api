@@ -1,5 +1,9 @@
 ### location modules
 
+# This is not the latest version!
+## Due to merge weirdness (never let a randomer set up the repo!)
+## until remerge, current version is in /twitter-followers-from-26.10-bkp or equivalent repo
+
  The plan is to compare a users's location, as entered via Location API, on a form, or from Twitter location, with a list of marginals they can help with outreach in, to point them towards the most useful nearby sessions.
 
  Currently, each postcode is done via a postcodes.io lookup.
@@ -13,5 +17,3 @@
  Then to nudge users to provide a location if they didn't.
  Then to ask users to click a map for a more detailed location if the location we have is not specific.
  Eventually the plan is to match multiple results, such as partial or fuzzy locations, against multiple locations (ie reachable canvassing sessions) within constituencies.
-
- 

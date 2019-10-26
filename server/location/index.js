@@ -1,4 +1,5 @@
 const debug = require('debug')('kyf:matcher');
+const { constituencyFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
 postcodeFromString, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
@@ -6,7 +7,8 @@ const { fromPostcodesIo, fromGoogle, fromTwitter } = require ('./requests');
 
 const emptyLocationObject = {
   specificity : 0,
-  twitterString  :''
+  twitterString  : '',
+  defaultTwitterFollow : '@uklabour'
 };
 const noVerify = { verify : false };
 
@@ -35,18 +37,22 @@ const cache = {
     // and then the harder cases, eg London, Hackney, The World
 
   },
+  
+  compress : x=> x,
+
+  uncompress : x=> x,
 
   put : (location, result, options={ verify:true } ) => {
     if (options.verify)
       location = cache.canonicalise(location);
-    cache[location] = result;
+    cache[location] = cache.compress(result);
     cache.records++;
   },
 
   get : (location, options={ verify:true } ) => {
     if (options.verify)
       location = cache.canonicalise(location);
-    return cache[location];
+    return cache.uncompress(cache.location);
   }
 }
 
@@ -109,4 +115,4 @@ const testThis = async ()=>  {
 
 testThis()
 
-module.exports = { emptyLocationObject, populateLocationObject }
+module.exports = { emptyLocationObject, populateLocationObject, constituencyFromPostcode }
