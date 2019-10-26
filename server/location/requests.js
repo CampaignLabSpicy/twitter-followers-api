@@ -11,9 +11,11 @@ const postcodesIo = require('node-postcodes.io')
 // (eg pairing together into an array, or changing property name)
 // NB the field processor functions do NOT return meaningful info, but receive a 'report' object and mutate it.
 
-const postcodesIoDefaultFields = [ {codes : 'parliamentary_constituency' }, 'region']
+const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
-  (result, report) => { report.latLong = [result.longitude, result.latitude] }
+  (result, report) => { report.latLong = [result.longitude, result.latitude] },
+  (result, report) => { report.gss = result.parliamentary_constituency },
+  (result, report) => { report.parliamentary_constituency = result.codes.parliamentary_constituency }
 ]
 
 // mutates the received object report
@@ -53,6 +55,12 @@ const nodePostcodesIoResultsShim = result => {
   return result.result
 }
 
+
+// fromPostcodesIo is currently:
+//  . set up for node-postcodes.io module (comment out ".then (nodePostcodesIoResultsShim)" to use postcodesio-client )
+//  . using postcodesIoDefaultFields & postcodesIoDefaultFieldProcessors, ie set up for API to respond
+//    with a single gss code and constituency name
+// TODO: make it general for batch lookup. Make constituencyFromPcioLookup a specific instance of it for single lookup.
 const fromPostcodesIo = async (location,
   desiredFields = postcodesIoDefaultFields,
   fieldProcessors = postcodesIoDefaultFieldProcessors
@@ -79,11 +87,33 @@ const fromPostcodesIo = async (location,
   return report
 }
 
+const constituencyFromPcioLookup = async location =>
+  fromPostcodesIo (location) ;
+
+const constituencyFromPostcode = async pc => {
+  // TODO: check it's a good postcode
+  return await fromPostcodesIo (pc)
+    .then (constituencyFromPcioLookup)
+}
+
+const locationInfoFromPostcode = async location=> {
+
+  // TODO: check postcodes via local .csv files first
+
+  return await fromPostcodesIo(location)
+}
+
+
+/// GOOGLE: - - - - - - - - - - - - - - -
+
 const fromGoogle = async (location)=> {
   const result = {};
 
   return result
 }
+
+
+/// TWITTER: - - - - - - - - - - - - - - -
 
 // Infer a location from Twitter context, eg tweets
 const fromTwitter = async (location, twitterData )=> {
@@ -105,4 +135,4 @@ const fromTwitter = async (location, twitterData )=> {
 // fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
 
 
-module.exports = { fromPostcodesIo, fromGoogle, fromTwitter }
+module.exports = { fromPostcodesIo, fromGoogle, fromTwitter, constituencyFromPostcode, locationInfoFromPostcode }

@@ -91,9 +91,17 @@ const latLongIsInBritishIsles = ([lat, long]) => (
 )
 
 
-
 const roundToNearest = unit => num =>
   Math.floor (0.5+ (num*unit)) / unit
+
+
+const promiseyLog = message => result =>  {
+  if (message)
+    console.log(message);
+  console.log(result);
+  return result
+}
+
 
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,

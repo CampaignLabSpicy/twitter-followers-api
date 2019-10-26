@@ -1,24 +1,18 @@
 const debug = require('debug')('kyf:matcher');
-const { constituencyFromPostcode } = require ('./externals');
+
+// const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
 postcodeFromString, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
-const { fromPostcodesIo, fromGoogle, fromTwitter } = require ('./requests');
+const { fromPostcodesIo, fromGoogle, fromTwitter,
+  constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
 
-const emptyLocationObject = {
+const LocationObject = ()=> ({
   specificity : 0,
   twitterString  : '',
   defaultTwitterFollow : '@uklabour'
-};
+});
 const noVerify = { verify : false };
-
-const locationInfoFromPostcode = async location=> {
-
-  // TODO: check postcodes via local .csv files first
-
-  return await fromPostcodesIo(location)
-}
-
 
 const cache = {
   records : 0,
@@ -37,7 +31,7 @@ const cache = {
     // and then the harder cases, eg London, Hackney, The World
 
   },
-  
+
   compress : x=> x,
 
   uncompress : x=> x,
@@ -54,13 +48,11 @@ const cache = {
       location = cache.canonicalise(location);
     return cache.uncompress(cache.location);
   }
+
 }
 
 const populateLocationObject = async (location, options={} ) => {
-  const result = {
-    specificity : 0,
-    twitterString  : location
-  };
+  const result = new LocationObject();
   location = cache.canonicalise(location);
 
   if (cache[location])
@@ -78,7 +70,7 @@ const populateLocationObject = async (location, options={} ) => {
     }
     catch (err) {
       if (err.message.endsWith('404')) {
-        return emptyLocationObject
+        return new LocationObject()
       }
       console.log(err);
     }
@@ -89,7 +81,6 @@ const populateLocationObject = async (location, options={} ) => {
     cache.put(location, result, noVerify);
     return result
   }
-
   if (options.useGoogle) {
     // If useGoogle==true, use our API credits to try to get a more specific location from Google API
     cache.put (location, result);
@@ -103,16 +94,16 @@ const populateLocationObject = async (location, options={} ) => {
   return result;
 };
 
+//
+// const testThis = async ()=>  {
+//   await Promise.all ([
+//     populateLocationObject ('PO123AA'),
+//     populateLocationObject ('PO12'),
+//     populateLocationObject ('XX99 3AA')
+//   ]);
+//   console.log(cache);
+// }
+//
+// testThis()
 
-const testThis = async ()=>  {
-  await Promise.all ([
-    populateLocationObject ('PO123AA'),
-    populateLocationObject ('PO12'),
-    populateLocationObject ('XX99 3AA')
-  ]);
-  console.log(cache);
-}
-
-testThis()
-
-module.exports = { emptyLocationObject, populateLocationObject, constituencyFromPostcode }
+module.exports = { LocationObject, populateLocationObject, constituencyFromPostcode }
