@@ -106,5 +106,5 @@ const promiseyLog = message => result =>  {
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
   postcodeFromString, postcodeFromString, latLongFromString, latLongFrom4dpLatLongString,
-  roundToNearest, latLongIsInBritishIsles
+  roundToNearest, latLongIsInBritishIsles, promiseyLog
 }

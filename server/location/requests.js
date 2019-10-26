@@ -1,7 +1,9 @@
 
 const PostcodesIO = require('postcodesio-client');
 // const postcodesIo = new PostcodesIO('https://api.postcodes.io')
-const postcodesIo = require('node-postcodes.io')
+const postcodesIo = require('node-postcodes.io');
+
+const { promiseyLog } = require ('./helpers');
 
 // Use these two config consts to take the data out of the XHR's result object,
 // in order to limit the info to be passed back to the cache.
@@ -14,8 +16,9 @@ const postcodesIo = require('node-postcodes.io')
 const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
   (result, report) => { report.latLong = [result.longitude, result.latitude] },
-  (result, report) => { report.gss = result.parliamentary_constituency },
-  (result, report) => { report.parliamentary_constituency = result.codes.parliamentary_constituency }
+  (result, report) => { report.gss = result.codes.parliamentary_constituency },
+  (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
+  (result, report) => { delete report.codes }
 ]
 
 // mutates the received object report
@@ -66,17 +69,19 @@ const fromPostcodesIo = async (location,
   fieldProcessors = postcodesIoDefaultFieldProcessors
 )=> {
   const report = {};
-
   await postcodesIo
   	.lookup(location)
     .then (nodePostcodesIoResultsShim)
     .then (handle404)
     .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
     .then (handle404) // repeated for the unpacked array result
+    .then(promiseyLog('before processing'))
     .then (info=> {
       recursiveProcessor (desiredFields, info, report);
       fieldProcessors.forEach (processor=> {processor(info, report)} );
+      return report
   	})
+    .then(promiseyLog('after processing'))
     // TODO: distinguish errors
     .catch (err=> {
       if (err.message.endsWith('404'))
@@ -87,20 +92,21 @@ const fromPostcodesIo = async (location,
   return report
 }
 
-const constituencyFromPcioLookup = async location =>
-  fromPostcodesIo (location) ;
+const constituencyFromPcioLookup = async pc => {
+  const result = await fromPostcodesIo (pc) ;
+  return result
+}
 
 const constituencyFromPostcode = async pc => {
   // TODO: check it's a good postcode
-  return await fromPostcodesIo (pc)
-    .then (constituencyFromPcioLookup)
+  const result = await constituencyFromPcioLookup (pc)
+  return result
 }
 
-const locationInfoFromPostcode = async location=> {
-
+const locationInfoFromPostcode = async pc=> {
   // TODO: check postcodes via local .csv files first
-
-  return await fromPostcodesIo(location)
+  const result = await fromPostcodesIo(pc);
+  return result
 }
 
 
