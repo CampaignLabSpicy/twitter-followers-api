@@ -1,5 +1,6 @@
-const debug = require('debug')('kyf:matcher')
+const debug = require('debug')('kyf:matcher');
 
+const { constituencyFromPostcode } = require ('./externals');
 
 const emptyLocationObject = {
   specificity : 0,
@@ -9,7 +10,7 @@ const emptyLocationObject = {
 
 const cache = {
   canonicalise : location => {
-    if ()
+    return location
   },
 
   compress : x=> x,
@@ -46,4 +47,4 @@ const populateLocationObject = async (location, options) => {
   return result;
 };
 
-module.exports = { emptyLocationObject, populateLocationObject }
+module.exports = { emptyLocationObject, populateLocationObject, constituencyFromPostcode }
