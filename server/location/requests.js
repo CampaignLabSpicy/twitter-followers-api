@@ -75,13 +75,11 @@ const fromPostcodesIo = async (location,
     .then (handle404)
     .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
     .then (handle404) // repeated for the unpacked array result
-    .then(promiseyLog('before processing'))
     .then (info=> {
       recursiveProcessor (desiredFields, info, report);
       fieldProcessors.forEach (processor=> {processor(info, report)} );
       return report
   	})
-    .then(promiseyLog('after processing'))
     // TODO: distinguish errors
     .catch (err=> {
       if (err.message.endsWith('404'))

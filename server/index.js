@@ -130,13 +130,13 @@ app.get('/withlocation', async (req, res) => {
 
 app.get('/location_lookup', async (req, res) => {
   const data = constituencyFromPostcode(req.query.pc7)
-    .then(promiseyLog('before second process:'))
+    // .then(promiseyLog('before second process:'))
     .then (data => {
       if (data.error)
         return { error : data.error }
       return data
     })
-    .then(promiseyLog('response:'))
+    // .then(promiseyLog('response:'))
     .then (result => {
     res.status(200).send(result)
   });
