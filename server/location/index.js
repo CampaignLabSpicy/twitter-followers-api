@@ -1,8 +1,10 @@
 const debug = require('debug')('kyf:matcher')
 
+
 const emptyLocationObject = {
   specificity : 0,
-  twitterString  :''
+  twitterString  : '',
+  defaultTwitterFollow : '@uklabour'
 };
 
 const cache = {
@@ -10,13 +12,18 @@ const cache = {
     if ()
   },
 
+  compress : x=> x,
+
+  uncompress : x=> x,
+
   put : (location, result) => {
     location = cache.canonicalise(location);
+    this.location = compress(result);
   },
 
   get : location => {
     location = cache.canonicalise(location);
-    return cache.location;
+    return uncompress(cache.location);
   }
 
 }
