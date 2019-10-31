@@ -88,21 +88,37 @@ app.get('/test', (req, res) => {
   res.redirect('/api')
 })
 
+
+// In frontend, location may be a string/ empty string, or a LocationObject containing fields including
+// twitterString : a string/ empty string
+// (test for location known with: if (location || location.twitterString) ... )
+// Better is to test for location specificity
+// location.specficity = 0 => no location
+// location.specficity = 10 => full postcode or lat/long
+// But test, eg: if (!location || location < x) ... since string.prop = undefined and (undefined < x) == false
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
-    console.log(userData);
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
-    res.send({ total: followerIds.length, matched: matchedIds.length })
+    const location =
+      req.session.location ||
+        (userData.location === '') ?
+          LocationObject()
+          : await populateLocationObject (userData.location, { useGoogle : true} );
+    req.session.location = location;
+    res.send({ total: followerIds.length, matched: matchedIds.length, location })
   } catch (e) {
     res.status(e.statusCode || 500).send(e.message)
   }
 })
 
+// /withlocation is for express routing (ie, not React):
+
+// NB For future cleverness with userData.geo_enabled: geo_enabled is deprecated and will always be null. Still available via GET account/settings. This field must be true for the current user to attach geographic data when using POST statuses / update
 app.get('/withlocation', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
@@ -110,14 +126,15 @@ app.get('/withlocation', async (req, res) => {
   }
   try {
     let location =
-      (userData.location === '') ?
-        LocationObject
-        : await populateLocationObject (userData.location, { useGoogle : true} )
+      req.session.location ||
+        (userData.location === '') ?
+          LocationObject()
+          : await populateLocationObject (userData.location, { useGoogle : true} );
 
     if (location.specificity < 2)
-      res.redirect(200, '/your_location_helps')
+      res.redirect(200, '/your_location_helps');
     if (location.specificity < 5)
-      res.redirect(200, '/location_map')
+      res.redirect(200, '/location_map');
 
 
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)

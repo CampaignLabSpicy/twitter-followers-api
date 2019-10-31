@@ -8,14 +8,14 @@ const is4dplatLongRegExp = new RegExp(/^(-?\d*(.\d{0,4})?),(-?\d*(.\d{0,4})?)$/)
 const whitespaceRegExp = new RegExp(/(^\s+|\s+$)/g);
 
 // match pc7, pc8, pcd
-const isPc7 = pc => !!(pc.match(pc7Regexp))
-const isPc8 = pc =>  !!(pc.match(pc8Regexp))
-const isPostcodeDistrict = pc => !!(pc.match(pcdRegexp))
+const isPc7 = pc => pc && !!(pc.match(pc7Regexp))
+const isPc8 = pc =>  pc && !!(pc.match(pc8Regexp))
+const isPostcodeDistrict = pc => pc && !!(pc.match(pcdRegexp))
 
 const isFullPostcode = pc => isPc7(pc) || isPc8(pc);
 const isPostcode = pc => isFullPostcode(pc) || isPostcodeDistrict(pc);
 
-const endsWithPostcode = pc => (pc.match(endsWithPostcodeRE))
+const endsWithPostcode = pc => (pc && pc.match(endsWithPostcodeRE))
 
 // retrieve pc7, pc8, pcd
 
@@ -47,11 +47,15 @@ const districtFromPostcodeDistrict = pc => {
   return `${pcd}`.toUpperCase();
 }
 const postcodeFromString = pc => {
+  if (!pc)
+    return null;
   const [_, pcd, inwardCode] = pc.match(endsWithPostcodeRE);
   return (`${ pcd }${ inwardCode? ' '+inwardCode : '' }`).toUpperCase();
 }
 
 const latLongFromString = latLong => {
+  if (!latLong)
+    return null;
   latLong = latLong.replace(whitespaceRegExp, '')
   const eastWest = latLong.match(latLongEastWestRegExp);
   if (eastWest)
@@ -73,6 +77,8 @@ const latLongFromString = latLong => {
 }
 
 const latLongFrom4dpLatLongString = latLong => {
+  if (!latLong)
+    return null;
   const groups = latLong.match(is4dplatLongRegExp);
   if (!groups)
     return null;

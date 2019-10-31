@@ -52,7 +52,8 @@ const cache = {
 }
 
 const populateLocationObject = async (location, options={} ) => {
-  const result = new LocationObject();
+  const result = LocationObject();
+  
   location = cache.canonicalise(location);
 
   if (cache[location])
@@ -70,7 +71,7 @@ const populateLocationObject = async (location, options={} ) => {
     }
     catch (err) {
       if (err.message.endsWith('404')) {
-        return new LocationObject()
+        return LocationObject()
       }
       console.log(err);
     }
