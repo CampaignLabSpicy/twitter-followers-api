@@ -14,7 +14,8 @@ const oauth = require('./oauth')
 const twitter = require('./twitter')
 const matcher = require('./matcher')
 const sessionStore = require('./sessionStore')
-const { emptyLocationObject, populateLocationObject, constituencyFromPostcode } = require('./location')
+const { LocationObject, populateLocationObject, constituencyFromPostcode } = require('./location')
+const { promiseyLog } = require ('./location/helpers');
 
 const app = express()
 app.use(logger('tiny', { stream: { write: msg => debug(msg.trim()) } }))
@@ -110,7 +111,7 @@ app.get('/withlocation', async (req, res) => {
   try {
     let location =
       (userData.location === '') ?
-        emptyLocationObject
+        LocationObject
         : await populateLocationObject (userData.location, { useGoogle : true} )
 
     if (location.specificity < 2)
@@ -129,19 +130,13 @@ app.get('/withlocation', async (req, res) => {
 
 app.get('/location_lookup', async (req, res) => {
   const data = constituencyFromPostcode(req.query.pc7)
-    .then (constituencies => {
-      const unpack = gssCode=> ({
-        gss : gssCode ,
-        constituency : constituencies[gssCode]
-      })
-      const codes = Object.keys (constituencies);
-
-      if (constituencies.error || !codes.length)
-        return { error : constituencies.error }
-      return codes.length === 1 ?
-        unpack (codes[0])
-        : codes.map (unpack)
+    .then(promiseyLog('before second process:'))
+    .then (data => {
+      if (data.error)
+        return { error : data.error }
+      return data
     })
+    .then(promiseyLog('response:'))
     .then (result => {
     res.status(200).send(result)
   });
