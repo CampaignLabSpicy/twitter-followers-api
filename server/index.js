@@ -6,7 +6,6 @@ const path = require('path')
 const express = require('express')
 const logger = require('morgan')
 const bodyParser = require('body-parser')
-const cookieParser = require('cookie-parser')
 const session = require('express-session')
 const cors = require('cors')
 
@@ -30,7 +29,6 @@ const PORT = process.env.PORT || 8080
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
-app.use(cookieParser())
 app.use(session({
   secret: process.env.SESSION_SECRET,
   store: sessionStore,
@@ -88,36 +86,57 @@ app.get('/test', (req, res) => {
   res.redirect('/api')
 })
 
+
+// In frontend, location may be a string/ empty string, or a LocationObject containing fields including
+// twitterString : a string/ empty string
+// (test for location known with: if (location || location.twitterString) ... )
+// Better is to test for location specificity
+// location.specficity = 0 => no location
+// location.specficity = 10 => full postcode or lat/long
+// But test, eg: if (!location || location < x) ... since string.prop = undefined and (undefined < x) == false
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
-    console.log(userData);
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
-    res.send({ total: followerIds.length, matched: matchedIds.length })
+    let location = [
+      req.query,                         // query: We assume any query passed will include one+ of pc, p7, pc8, latlong
+      req.session.location,              // session: NB Any location object from session may be partial
+      userData.location,                 // userData: is the twitterString, ie location as it appears on user's Twitter profile
+      LocationObject()
+    ];
+console.log(location);
+    req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
+    res.send({ total: followerIds.length, matched: matchedIds.length, location })
   } catch (e) {
+    console.log(e);
     res.status(e.statusCode || 500).send(e.message)
   }
 })
 
+// /withlocation is for express routing (ie, not React):
+
+// NB For future cleverness with userData.geo_enabled: geo_enabled is deprecated and will always be null. Still available via GET account/settings. This field must be true for the current user to attach geographic data when using POST statuses / update
 app.get('/withlocation', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
+    // Using old functionality here - change it!
     let location =
-      (userData.location === '') ?
-        LocationObject
-        : await populateLocationObject (userData.location, { useGoogle : true} )
+      req.session.location ||
+        (userData.location === '') ?
+          LocationObject()
+          : await populateLocationObject (userData.location, { useGoogle : true} );
 
     if (location.specificity < 2)
-      res.redirect(200, '/your_location_helps')
+      res.redirect(200, '/your_location_helps');
     if (location.specificity < 5)
-      res.redirect(200, '/location_map')
+      res.redirect(200, '/location_map');
 
 
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
