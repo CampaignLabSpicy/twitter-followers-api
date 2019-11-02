@@ -102,14 +102,17 @@ app.get('/api', async (req, res) => {
   try {
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
-    const location =
-      req.session.location ||
-        (userData.location === '') ?
-          LocationObject()
-          : await populateLocationObject (userData.location, { useGoogle : true} );
-    req.session.location = location;
+    let location = [
+      req.query,                         // query: We assume any query passed will include one+ of pc, p7, pc8, latlong
+      req.session.location,              // session: NB Any location object from session may be partial
+      userData.location,                 // userData: is the twitterString, ie location as it appears on user's Twitter profile
+      LocationObject()
+    ];
+console.log(location);
+    req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
     res.send({ total: followerIds.length, matched: matchedIds.length, location })
   } catch (e) {
+    console.log(e);
     res.status(e.statusCode || 500).send(e.message)
   }
 })
@@ -123,6 +126,7 @@ app.get('/withlocation', async (req, res) => {
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
+    // Using old functionality here - change it!
     let location =
       req.session.location ||
         (userData.location === '') ?

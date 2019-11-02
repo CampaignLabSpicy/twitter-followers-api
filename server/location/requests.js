@@ -15,7 +15,7 @@ const { promiseyLog } = require ('./helpers');
 
 const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
-  (result, report) => { report.latLong = [result.longitude, result.latitude] },
+  (result, report) => { report.latLong = { lng : result.longitude, lat: result.latitude } },
   (result, report) => { report.gss = result.codes.parliamentary_constituency },
   (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
   (result, report) => { delete report.codes }
@@ -75,7 +75,7 @@ const fromPostcodesIo = async (location,
     .then (handle404)
     .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
     .then (handle404) // repeated for the unpacked array result
-    .then(promiseyLog('before processing'))
+    .then (promiseyLog('before processing'))
     .then (info=> {
       recursiveProcessor (desiredFields, info, report);
       fieldProcessors.forEach (processor=> {processor(info, report)} );

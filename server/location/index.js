@@ -2,8 +2,8 @@ const debug = require('debug')('kyf:matcher');
 
 // const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
-pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
-postcodeFromString, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
+pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
+toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
 const { fromPostcodesIo, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
 
@@ -18,18 +18,15 @@ const cache = {
   records : 0,
 
   canonicalise : location => {
-    const latLong = latLongFromString(location);
+    const latLong = toStandardLatLong(location);
     if (latLong)
-      return( latLong
-          .map( roundToNearest(0.001) )    // 110 metre precision
-          .join(',')
-      );
+      return(`${latLong.lng},${latLong.lat}`);                // see note in helpers.js
     if (isPostcode(location))
       return pc8FromFullPostcode(location) || districtFromPostcodeDistrict(location)
     if (endsWithPostcode(location))
       return postcodeFromString(location)
     // and then the harder cases, eg London, Hackney, The World
-
+    return location
   },
 
   compress : x=> x,
@@ -39,8 +36,11 @@ const cache = {
   put : (location, result, options={ verify:true } ) => {
     if (options.verify)
       location = cache.canonicalise(location);
-    cache[location] = cache.compress(result);
-    cache.records++;
+    if (!cache[location]) {
+      cache[location] = cache.compress(result);
+      cache.records++;
+    }
+    console.log(cache);
   },
 
   get : (location, options={ verify:true } ) => {
@@ -51,48 +51,111 @@ const cache = {
 
 }
 
-const populateLocationObject = async (location, options={} ) => {
-  const result = LocationObject();
-  
-  location = cache.canonicalise(location);
 
-  if (cache[location])
-    return cache.get(location, noVerify)
+// locations is one of:
+// . query object, eg {pc='AB1 9XY', latlong=<leafletJS latlong>}
+// . pcd, pc7, pc8, latLong, leafletJS latlong
+// . a prioirty ordered array of the above
+const populateLocationObject = async (locations, options={} ) => {
+  if (!Array.isArray(locations))
+    locations = [locations];
 
-  if (isFullPostcode(location))
-    try {
-      const info = await locationInfoFromPostcode(location)
+  const possibles = locations
+    .map (async location => {
+      const result = LocationObject();
+      if (!location)
+        return null
+      // NB currently does not cache failures well
 
-      /// process info
-      Object.assign (result, info);
+  console.log('\ntrying to convert ',location);
+      if (typeof location !=='object') {
+        location = cache.canonicalise(location);
 
-      cache.put(location, result, noVerify);
-      return result
-    }
-    catch (err) {
-      if (err.message.endsWith('404')) {
-        return LocationObject()
+  if (!cache[location])
+  console.log('Not cached:',location)
+  else
+  console.log('found in cache:',cache.get(location, noVerify));
+
+        if (cache[location])
+          return cache.get(location, noVerify)
       }
-      console.log(err);
-    }
+  console.log('canonicalised (if string): ',location);
 
-  if (latLongFrom4dpLatLongString(location)) {
-    const info = locationInfoFromLatLong(location)
-    /// process info
-    cache.put(location, result, noVerify);
-    return result
-  }
-  if (options.useGoogle) {
-    // If useGoogle==true, use our API credits to try to get a more specific location from Google API
-    cache.put (location, result);
-  }
+      // the only permissable objects are
+      // . latLng (leaflet.js)
+      // . or req.query object containing at least one of pc, pc7, pc8, pcd, latlong as properties
+      const fullPc = location.pc7 || location.pc8 || location.pc || location;
+      if (isFullPostcode(fullPc))
+        try {
+          let specificity;
+          const info = await locationInfoFromPostcode(fullPc)
+          if (info.region)
+            specificity = 1
+          if (isPostcodeDistrict(info.pcd))
+            specificity = 5
+          if (info.parliamentary_constituency)
+            specificity = 6
+          if (toLatLong(info.latLong) || isFullPostcode(info.pc || info.pc7 || info.pc8))
+            specificity = 10
+          // TODO: use GSS bits here from GSS converter
 
-  if (options.useTwitterContext) {
-    // Use context from eg user's tweets to attempt to guess location
-    // user data, eg screen name is received in options.useTwitterContext object
-  }
+          Object.assign (result, info, {specificity} );
 
-  return result;
+          // job done, don't examine other cases
+          cache.put(fullPc, result, noVerify);
+          console.log('Successful lookup, got: ', info);
+          return result
+        }
+        catch (err) {
+          if (err.message.endsWith('404')) {
+            if (typeof location==='string')
+              location = districtFromFullPostcode(fullPc)
+            else
+              location.pcd = location.pcd || districtFromFullPostcode(fullPc)
+          }
+          console.log(err);
+        }
+
+      if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
+        // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
+        Object.assign (result, {
+          pcd : location.pcd || location,
+          specificity : 5
+        });
+        //  cache but don't return - we may get a better result
+      }
+
+      // TODO: other string types, or, eg, query.city
+
+      // NB using lowercase latlong, as it's a querystring
+      location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
+
+      if (latLongFrom4dpLatLongString(location)) {
+        const info = locationInfoFromLatLong(location)
+        /// process info
+        Object.assign ( result, info, { specificity:10 } )
+        cache.put( location, result, noVerify );
+        return result
+      }
+      if (options.useGoogle) {
+        // If useGoogle==true, use our API credits to try to get a more specific location from Google API
+        cache.put (location, result);
+      }
+
+      if (options.useTwitterContext) {
+        // Use context from eg user's tweets to attempt to guess location
+        // user data, eg screen name is received in options.useTwitterContext object
+      }
+      return result
+    }) ;
+
+  let bestLocation = (await Promise.all(possibles))
+    .filter (x=>x)
+    .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
+
+console.log('results:',bestLocation );
+
+  return bestLocation[0];
 };
 
 //
