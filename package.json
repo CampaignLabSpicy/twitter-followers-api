@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
-    "dev": "nodemon -w server server",
+    "dev": "nodemon server",
     "matcher": "node matcher.js",
     "lint": "standard --fix \"server/**/*.js\" \"bin/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -24,7 +24,9 @@
     "lodash": "^4.17.15",
     "mongodb": "^3.3.3",
     "morgan": "^1.9.1",
+    "node-postcodes.io": "^1.0.0",
     "oauth": "^0.9.15",
+    "postcodesio-client": "^0.3.4",
     "redis": "^2.8.0",
     "redis-server": "^1.2.2",
     "request": "^2.88.0",

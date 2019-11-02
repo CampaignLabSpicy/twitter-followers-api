@@ -13,6 +13,8 @@ const oauth = require('./oauth')
 const twitter = require('./twitter')
 const matcher = require('./matcher')
 const sessionStore = require('./sessionStore')
+const { LocationObject, populateLocationObject, constituencyFromPostcode } = require('./location')
+const { promiseyLog } = require ('./location/helpers');
 
 const app = express()
 app.use(logger('tiny', { stream: { write: msg => debug(msg.trim()) } }))
@@ -84,6 +86,14 @@ app.get('/test', (req, res) => {
   res.redirect('/api')
 })
 
+
+// In frontend, location may be a string/ empty string, or a LocationObject containing fields including
+// twitterString : a string/ empty string
+// (test for location known with: if (location || location.twitterString) ... )
+// Better is to test for location specificity
+// location.specficity = 0 => no location
+// location.specficity = 10 => full postcode or lat/long
+// But test, eg: if (!location || location < x) ... since string.prop = undefined and (undefined < x) == false
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
@@ -92,10 +102,67 @@ app.get('/api', async (req, res) => {
   try {
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
+    const location =
+      req.session.location ||
+        (userData.location === '') ?
+          LocationObject()
+          : await populateLocationObject (userData.location, { useGoogle : true} );
+    req.session.location = location;
+    res.send({ total: followerIds.length, matched: matchedIds.length, location })
+  } catch (e) {
+    res.status(e.statusCode || 500).send(e.message)
+  }
+})
+
+// /withlocation is for express routing (ie, not React):
+
+// NB For future cleverness with userData.geo_enabled: geo_enabled is deprecated and will always be null. Still available via GET account/settings. This field must be true for the current user to attach geographic data when using POST statuses / update
+app.get('/withlocation', async (req, res) => {
+  const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
+  if (!userData) {
+    return res.status(403).send('You are not logged in with Twitter')
+  }
+  try {
+    let location =
+      req.session.location ||
+        (userData.location === '') ?
+          LocationObject()
+          : await populateLocationObject (userData.location, { useGoogle : true} );
+
+    if (location.specificity < 2)
+      res.redirect(200, '/your_location_helps');
+    if (location.specificity < 5)
+      res.redirect(200, '/location_map');
+
+
+    const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
+    const matchedIds = await matcher(followerIds)
     res.send({ total: followerIds.length, matched: matchedIds.length })
   } catch (e) {
     res.status(e.statusCode || 500).send(e.message)
   }
+})
+
+app.get('/location_lookup', async (req, res) => {
+  const data = constituencyFromPostcode(req.query.pc7)
+    .then(promiseyLog('before second process:'))
+    .then (data => {
+      if (data.error)
+        return { error : data.error }
+      return data
+    })
+    .then(promiseyLog('response:'))
+    .then (result => {
+    res.status(200).send(result)
+  });
+})
+
+app.get('/your_location_helps', async (req, res) => {
+  res.status(500).send('Not implemented')
+})
+
+app.get('/location_map', async (req, res) => {
+  res.status(500).send('Not implemented')
 })
 
 app.get('*', function (req, res) {
