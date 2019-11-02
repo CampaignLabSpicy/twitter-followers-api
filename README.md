@@ -7,6 +7,7 @@
 5. `npm run dev` or `npm start`
  
 Browse to `http://localhost:8080/` and authorise the app.
+You may need to browse to this port, even if you are accessing in development on a proxied port, eg if `localhost:3000/login` doesn't do the job.
 
 `http://localhost:8080/api` should give you yor followers!
 
