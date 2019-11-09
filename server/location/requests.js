@@ -5,6 +5,8 @@ const postcodesIo = require('node-postcodes.io');
 
 const { promiseyLog } = require ('./helpers');
 
+const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
+
 // Use these two config consts to take the data out of the XHR's result object,
 // in order to limit the info to be passed back to the cache.
 // 'default fields' is an array whose members can be field names as found in the remote API's result
@@ -20,6 +22,21 @@ const postcodesIoDefaultFieldProcessors = [
   (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
   (result, report) => { delete report.codes }
 ]
+
+// Takes a Location Object
+const addConstituencyInfoToLocation = location => {
+  // TODO : Implement it ;)
+}
+
+// Takes a postcodes.io result record
+// NB Mutates the object!
+const addConstituencyInfoTo = result => {
+  // TODO: Typecheck input (eg was it array? error?)
+  const info = constituencyInfo[result.parliamentary_constituency];
+  if (!info)
+    return false;
+  console.log(info);
+}
 
 // mutates the received object report
 const recursiveProcessor = (fields, result, report) =>  {
@@ -106,6 +123,7 @@ const constituencyFromPostcode = async pc => {
 const locationInfoFromPostcode = async pc=> {
   // TODO: check postcodes via local .csv files first
   const result = await fromPostcodesIo(pc);
+  addConstituencyInfoTo (result);
   return result
 }
 

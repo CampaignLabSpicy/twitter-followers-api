@@ -40,7 +40,7 @@ const cache = {
       cache[location] = cache.compress(result);
       cache.records++;
     }
-    console.log(cache);
+    // console.log(cache);
   },
 
   get : (location, options={ verify:true } ) => {
@@ -61,13 +61,13 @@ const populateLocationObject = async (locations, options={} ) => {
     locations = [locations];
 
   const possibles = locations
-    .map (async location => {
+    .map (async (location, idx) => {
       const result = LocationObject();
       if (!location)
         return null
       // NB currently does not cache failures well
 
-  console.log('\ntrying to convert ',location);
+  console.log('\ntrying to convert ',idx,location);
       if (typeof location !=='object') {
         location = cache.canonicalise(location);
 
@@ -79,7 +79,7 @@ const populateLocationObject = async (locations, options={} ) => {
         if (cache[location])
           return cache.get(location, noVerify)
       }
-  console.log('canonicalised (if string): ',location);
+  console.log(`canonicalised ${''}(if string): ${location}`);
 
       // the only permissable objects are
       // . latLng (leaflet.js)
@@ -87,8 +87,10 @@ const populateLocationObject = async (locations, options={} ) => {
       const fullPc = location.pc7 || location.pc8 || location.pc || location;
       if (isFullPostcode(fullPc))
         try {
+    console.log(fullPc);
           let specificity;
           const info = await locationInfoFromPostcode(fullPc)
+    console.log(Object.keys(info));
           if (info.region)
             specificity = 1
           if (isPostcodeDistrict(info.pcd))
