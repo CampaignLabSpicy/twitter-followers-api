@@ -45,3 +45,38 @@ Enable MongoDB for data storage by setting `DATA_STORAGE=mongodb` and `MONGODB_U
 #### Load data into MongoDB
 
 `node bin/loadDataIntoMongodb.js`
+
+#### Heroku login details:
+The website is hosted on Heroku
+The Heroku account is: 
+info.campaignlab@gmail.com
+The password is in a private message on a Slack:
+If required ask: Hannah, Tom, Jude or Joaquim
+The website is connected to the github repositories listed above - any changes pushed to the master branch will change the website immediately.
+
+#### Godaddy
+The domain name server is Godaddy
+The email is info.campaignlab@gmail.com
+The password is the same as the heroku login
+
+#### Cloudflare - SSL
+The SSL is managed by cloudflare but currently the account used is is Joaquim’s personal account. 
+
+#### Notes from Joaquim on the SSL setup:
+SSL is provided using CloudFlare, as it is free, and there is a cost to use SSL directly on Heroku
+Client ---> https ---> CloudFlare ---> http ---> Heroku
+here are the settings on my CloudFlare account. you would need to create a CloudFlare account and duplicate these:
+KnowYourFollowers CloudFlare DNS
+CNAME api intense-mockingbird-13qu8x7n5dwfkh68wa5bqga7.herokudns.com
+CNAME knowyourfollowers.org crystalline-fig-n8qc2mdzs7xrfgh36i2at1pp.herokudns.com
+CNAME www cardiovascular-galangal-kuexahovvmch7dod8liw2c5u.herokudns.com
+
+You will also need these Page Rules:
+
+To switch the domain to your CloudFlare, you'll need to update the nameservers in GoDaddy. These are currently:
+KAMI.NS.CLOUDFLARE.COM
+MILES.NS.CLOUDFLARE.COM
+they will need to be updated to match the ones provided by your CloudFlare account
+ 
+when you're about to create your CloudFlare account, I'll need to delete the site from mine, so let me know when to do that
+
