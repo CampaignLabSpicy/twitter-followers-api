@@ -70,11 +70,13 @@ app.get('/sessions/callback', async (req, res) => {
 
     res.redirect(req.session.origin)
   } catch (e) {
+    console.log(e);
     res.status(500).send(e.message)
   }
 })
 
 app.get('/', async (req, res) => {
+console.log('Request was to /');
   const { userData } = req.session
   if (!userData) {
     return res.redirect('/login')
@@ -97,6 +99,7 @@ app.get('/test', (req, res) => {
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
+    console.log(403);
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
@@ -176,6 +179,7 @@ app.get('/location_map', async (req, res) => {
 })
 
 app.get('*', function (req, res) {
+  console.log(`${req.url} redirecting to /`);
   res.redirect('/')
 })
 
