@@ -110,40 +110,46 @@ app.get('/api', async (req, res) => {
     ];
 console.log(location);
     req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
-    res.send({ total: followerIds.length, matched: matchedIds.length, location })
+    res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })
   } catch (e) {
     console.log(e);
     res.status(e.statusCode || 500).send(e.message)
   }
 })
 
-// /withlocation is for express routing (ie, not React):
 
 // NB For future cleverness with userData.geo_enabled: geo_enabled is deprecated and will always be null. Still available via GET account/settings. This field must be true for the current user to attach geographic data when using POST statuses / update
-app.get('/withlocation', async (req, res) => {
+app.get('/locationtest', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
-  if (!userData) {
-    return res.status(403).send('You are not logged in with Twitter')
+  let followerIds = [], matchedIds = [];
+  let location = [
+    req.query,                         // query: We assume any query passed will include one+ of pc, p7, pc8, latlong
+    req.session.location
+  ];
+  if (userData) {
+    followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret);
+    matchedIds = await matcher(followerIds);
+    location.push (userData.location);
   }
+  location.push (LocationObject());
+
   try {
-    // Using old functionality here - change it!
-    let location =
-      req.session.location ||
-        (userData.location === '') ?
-          LocationObject()
-          : await populateLocationObject (userData.location, { useGoogle : true} );
+      req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
+    } catch (e) {
+      console.log(e);
+      res.status(e.statusCode || 500).send(e.message)
+    }
 
-    if (location.specificity < 2)
+  // set usingReact to false for express routing (ie, not React):
+  var usingReact = true;
+  if (usingReact) {
+    // normal usage - pass
+    res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })
+  } else {
+    if (req.session.location.specificity < 2)
       res.redirect(200, '/your_location_helps');
-    if (location.specificity < 5)
+    if (req.session.location.specificity < 5)
       res.redirect(200, '/location_map');
-
-
-    const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
-    const matchedIds = await matcher(followerIds)
-    res.send({ total: followerIds.length, matched: matchedIds.length })
-  } catch (e) {
-    res.status(e.statusCode || 500).send(e.message)
   }
 })
 
@@ -174,5 +180,5 @@ app.get('*', function (req, res) {
 })
 
 app.listen(PORT, function () {
-  debug('App running on port ' + PORT + '!')
+  debug('API server listening on port ' + PORT + '!')
 })
