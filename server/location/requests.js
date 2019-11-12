@@ -33,6 +33,7 @@ const addConstituencyInfoToLocation = location => {
 const addConstituencyInfoTo = result => {
   // TODO: Typecheck input (eg was it array? error?)
   const info = constituencyInfo[result.parliamentary_constituency];
+  console.log('info',info);
   if (!info)
     return false;
   console.log(info);

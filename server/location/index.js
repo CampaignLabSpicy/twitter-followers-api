@@ -67,19 +67,19 @@ const populateLocationObject = async (locations, options={} ) => {
         return null
       // NB currently does not cache failures well
 
-  console.log('\ntrying to convert ',idx,location);
+  // console.log('\ntrying to convert ',idx,location);
       if (typeof location !=='object') {
         location = cache.canonicalise(location);
 
   if (!cache[location])
-  console.log('Not cached:',location)
+  {} // console.log('Not cached:',location)
   else
-  console.log('found in cache:',cache.get(location, noVerify));
+  // console.log('found in cache:',cache.get(location, noVerify));
 
         if (cache[location])
           return cache.get(location, noVerify)
       }
-  console.log(`canonicalised ${''}(if string): ${location}`);
+  // console.log(`canonicalised ${''}(if string): ${location}`);
 
       // the only permissable objects are
       // . latLng (leaflet.js)
@@ -87,10 +87,10 @@ const populateLocationObject = async (locations, options={} ) => {
       const fullPc = location.pc7 || location.pc8 || location.pc || location;
       if (isFullPostcode(fullPc))
         try {
-    console.log(fullPc);
+    console.log('got pc:',fullPc);
           let specificity;
           const info = await locationInfoFromPostcode(fullPc)
-    console.log(Object.keys(info));
+    // console.log(Object.keys(info));
           if (info.region)
             specificity = 1
           if (isPostcodeDistrict(info.pcd))
@@ -155,7 +155,7 @@ const populateLocationObject = async (locations, options={} ) => {
     .filter (x=>x)
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
 
-console.log('results:',bestLocation );
+// console.log('results:',bestLocation );
 
   return bestLocation[0];
 };
