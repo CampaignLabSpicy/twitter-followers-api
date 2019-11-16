@@ -1,7 +1,7 @@
-const endsWithPostcodeRE = new RegExp(/([a-z|A-Z]{1,2}\d\w)\s?(\d[a-z|A-Z]{2})?\s*$/,'m');
-const pc7Regexp = new RegExp(/([a-z|A-Z]{1,2}\d\w)(\d[a-z|A-Z]{2})/);
-const pc8Regexp = new RegExp(/([a-z|A-Z]{1,2}\d\w) (\d[a-z|A-Z]{2})/);
-const pcdRegexp = new RegExp(/([a-z|A-Z]{1,2}\d\w)\s*$/);
+const endsWithPostcodeRE = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?)\s?(\d[a-z|A-Z]{2})?\s*$/,'m');
+const pc7Regexp = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?)(\d[a-z|A-Z]{2})/);
+const pc8Regexp = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?) (\d[a-z|A-Z]{2})/);
+const pcdRegexp = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?)\s*$/);
 const latLongEastWestRegExp = new RegExp(/(.*)([NSns])(.*)([EWew])(.*)/);
 const latLongDigitsRegExp = new RegExp(/^\s*\(?\s*(-?\d*.\d*)\s*,\s*(-?\d*.\d*)\s*\)?\s*$/);
 const is4dplatLongRegExp = new RegExp(/^(-?\d*(.\d{0,4})?),(-?\d*(.\d{0,4})?)$/);
@@ -145,7 +145,7 @@ const promiseyLog = message => result =>  {
 
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
-  postcodeFromString, postcodeFromString,
+  postcodeFromString,
   toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString,
   roundToNearest, latLongIsInBritishIsles, promiseyLog
 }
