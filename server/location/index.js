@@ -72,7 +72,8 @@ const populateLocationObject = async (locations, options={} ) => {
         location = cache.canonicalise(location);
 
         if (!cache[location])
-        { // debug('Not cached:',location) }
+        { // debug('Not cached:',location)
+        }
         else
           // debug('found in cache:',cache.get(location, noVerify));
 
