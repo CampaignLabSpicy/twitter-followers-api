@@ -114,7 +114,7 @@ console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> query:',re
       LocationObject()
     ];
     // console.log(location);
-    req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
+    req.session.location = await populateLocationObject (location, locationOptions={ useGoogle : true} ) ;
     res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })
   } catch (e) {
     console.log(e);

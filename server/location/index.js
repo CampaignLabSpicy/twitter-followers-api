@@ -168,7 +168,7 @@ const populateLocationObject = async (locations, options={} ) => {
 //     populateLocationObject ('PO12'),
 //     populateLocationObject ('XX99 3AA')
 //   ]);
-//   consoole.log(cache);
+//   console.log(cache);
 // }
 //
 // testThis()
