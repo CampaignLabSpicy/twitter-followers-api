@@ -26,6 +26,7 @@ app.use(cors({
 }))
 
 const PORT = process.env.PORT || 8080
+let usingReact = true;
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -99,7 +100,7 @@ app.get('/test', (req, res) => {
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
-    console.log(403);
+    console.log('No userData in session - sending 403');
     return res.status(403).send('You are not logged in with Twitter')
   }
   try {
@@ -147,7 +148,6 @@ console.log(req.query);
     }
 
   // set usingReact to false for express routing (ie, not React):
-  var usingReact = true;
   if (usingReact) {
     // normal usage - pass
     res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })

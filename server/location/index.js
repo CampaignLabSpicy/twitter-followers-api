@@ -1,4 +1,4 @@
-const debug = require('debug')('kyf:matcher');
+const debug = require('debug')('kyf:location.server.index.js');
 
 // const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
@@ -40,7 +40,7 @@ const cache = {
       cache[location] = cache.compress(result);
       cache.records++;
     }
-    // console.log(cache);
+    // debug(cache);
   },
 
   get : (location, options={ verify:true } ) => {
@@ -67,19 +67,19 @@ const populateLocationObject = async (locations, options={} ) => {
         return null
       // NB currently does not cache failures well
 
-  // console.log('\ntrying to convert ',idx,location);
+  // debug('\ntrying to convert ',idx,location);
       if (typeof location !=='object') {
         location = cache.canonicalise(location);
 
-  if (!cache[location])
-  {} // console.log('Not cached:',location)
-  else
-  // console.log('found in cache:',cache.get(location, noVerify));
+        if (!cache[location])
+        { // debug('Not cached:',location) }
+        else
+          // debug('found in cache:',cache.get(location, noVerify));
 
-        if (cache[location])
-          return cache.get(location, noVerify)
+          if (cache[location])
+            return cache.get(location, noVerify)
       }
-  // console.log(`canonicalised ${''}(if string): ${location}`);
+  // debug(`canonicalised ${''}(if string): ${location}`);
 
       // the only permissable objects are
       // . latLng (leaflet.js)
@@ -87,10 +87,10 @@ const populateLocationObject = async (locations, options={} ) => {
       const fullPc = location.pc7 || location.pc8 || location.pc || location;
       if (isFullPostcode(fullPc))
         try {
-    console.log('got pc:',fullPc);
+    debug('got pc:',fullPc);
           let specificity;
           const info = await locationInfoFromPostcode(fullPc)
-    // console.log(Object.keys(info));
+    // debug(Object.keys(info));
           if (info.region)
             specificity = 1
           if (isPostcodeDistrict(info.pcd))
@@ -105,7 +105,7 @@ const populateLocationObject = async (locations, options={} ) => {
 
           // job done, don't examine other cases
           cache.put(fullPc, result, noVerify);
-          console.log('Successful lookup, got: ', info);
+          debug('Successful lookup, got: ', info);
           return result
         }
         catch (err) {
@@ -152,10 +152,10 @@ const populateLocationObject = async (locations, options={} ) => {
     }) ;
 
   let bestLocation = (await Promise.all(possibles))
-    .filter (x=>x)
+    .filter (Boolean)
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
 
-// console.log('results:',bestLocation );
+// debug('results:',bestLocation );
 
   return bestLocation[0];
 };
@@ -167,7 +167,7 @@ const populateLocationObject = async (locations, options={} ) => {
 //     populateLocationObject ('PO12'),
 //     populateLocationObject ('XX99 3AA')
 //   ]);
-//   console.log(cache);
+//   consoole.log(cache);
 // }
 //
 // testThis()
