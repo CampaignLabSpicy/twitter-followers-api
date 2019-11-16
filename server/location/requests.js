@@ -125,7 +125,14 @@ const constituencyFromPostcode = async pc => {
 
 const locationInfoFromPostcode = async pc=> {
   // TODO: check postcodes via local .csv files first
-  const result = await fromPostcodesIo(pc);
+  const result = await fromPostcodesIo(pc)
+    .catch (err=> {
+      if (err.message.endsWith('404')) {
+        // TODO: catch bad 404s resulting from bad postcodes
+        console.log(`Bad postcode - ${pc}`);
+      }
+      console.log(err);
+    }) ;
   addConstituencyInfoTo (result);
   return result
 }
