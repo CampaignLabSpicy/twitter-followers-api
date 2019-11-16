@@ -4,6 +4,7 @@ const debug = require('debug')('kyf:location.server.index.js');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
 toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
+const { officialLabourHandlesFromConstituency } = require ('./locationmatchers');
 const { fromPostcodesIo, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
 
@@ -51,12 +52,24 @@ const cache = {
 
 }
 
+// Mutates resultObject by concatenating handles from listOfCLPsandPPCs.json
+const addOfficialLabourHandles = (resultObject, locationInfo) => {
+  if (locationInfo && locationInfo.parliamentary_constituency) {
+    if (!resultObject.twitterHandles)
+      resultObject.twitterHandles = [];
+    let handles = officialLabourHandlesFromConstituency(locationInfo.parliamentary_constituency) || []
+    handles.forEach ( handle =>
+        resultObject.twitterHandles.push(handle)
+    )
+  }
+}
 
 // locations is one of:
 // . query object, eg {pc='AB1 9XY', latlong=<leafletJS latlong>}
 // . pcd, pc7, pc8, latLong, leafletJS latlong
 // . a prioirty ordered array of the above
 const populateLocationObject = async (locations, options={} ) => {
+  let handles = [];
   if (!Array.isArray(locations))
     locations = [locations];
 
@@ -91,7 +104,7 @@ const populateLocationObject = async (locations, options={} ) => {
     debug('got pc:',fullPc);
           let specificity;
           const info = await locationInfoFromPostcode(fullPc)
-    // debug(Object.keys(info));
+    debug(Object.keys(info));
           if (info.region)
             specificity = 1
           if (isPostcodeDistrict(info.pcd))
@@ -107,6 +120,8 @@ const populateLocationObject = async (locations, options={} ) => {
           // job done, don't examine other cases
           cache.put(fullPc, result, noVerify);
           debug('Successful lookup, got: ', info);
+          // don't retrieve handles from cache, we want fresh ones!
+          addOfficialLabourHandles (result, info);
           return result
         }
         catch (err) {
@@ -133,13 +148,17 @@ const populateLocationObject = async (locations, options={} ) => {
       // NB using lowercase latlong, as it's a querystring
       location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
 
+// WHAT IF THE INFO'S NOT FROM LATLNG!!?
       if (latLongFrom4dpLatLongString(location)) {
         const info = locationInfoFromLatLong(location)
         /// process info
         Object.assign ( result, info, { specificity:10 } )
         cache.put( location, result, noVerify );
+        // don't retrieve handles from cache, we want fresh ones!
+        addOfficialLabourHandles (result, locationInfo);
         return result
       }
+
       if (options.useGoogle) {
         // If useGoogle==true, use our API credits to try to get a more specific location from Google API
         cache.put (location, result);

@@ -1,4 +1,7 @@
 
+// postcodesio-client is an alternative, simpler library.
+// node-postcodes.io, remeber to pipe results through include nodePostcodesIoResultsShim
+
 const PostcodesIO = require('postcodesio-client');
 // const postcodesIo = new PostcodesIO('https://api.postcodes.io')
 const postcodesIo = require('node-postcodes.io');
@@ -48,7 +51,6 @@ const recursiveProcessor = (fields, result, report) =>  {
   }
   else if (typeof fields === 'object') {
     Object.keys(fields).forEach (key =>  {
-const postcodesIo = new PostcodesIO('https://api.postcodes.io')
       report[key] = {};
       recursiveProcessor(fields[key], result[key], report[key])
     })
