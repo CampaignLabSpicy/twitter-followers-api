@@ -175,21 +175,9 @@ const populateLocationObject = async (locations, options={} ) => {
     .filter (Boolean)
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
 
-// debug('results:',bestLocation );
+  // debug('results:',bestLocation );
 
   return bestLocation[0];
 };
-
-//
-// const testThis = async ()=>  {
-//   await Promise.all ([
-//     populateLocationObject ('PO123AA'),
-//     populateLocationObject ('PO12'),
-//     populateLocationObject ('XX99 3AA')
-//   ]);
-//   console.log(cache);
-// }
-//
-// testThis()
 
 module.exports = { LocationObject, populateLocationObject, constituencyFromPostcode }
