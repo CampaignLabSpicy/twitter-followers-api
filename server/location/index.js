@@ -103,9 +103,12 @@ const populateLocationObject = async (locations, options={} ) => {
   if (!Array.isArray(locations))
     locations = [locations];
 
+  debug (locations.map (l => [typeof l, Boolean(l), l? l.specificity : l ]));
   const possibles = locations
     .map (async (location, idx) => {
-      const result = LocationObject();
+      const result = (location && location.specificity) ?
+        LocationObject()
+        : location;
       if (!location)
         return null
 
@@ -166,6 +169,7 @@ const populateLocationObject = async (locations, options={} ) => {
           const info = await fromDoogal(possiblePcSector);
           debug ('Got the result from Doogal:',info)
           if (info)
+  debug (bestLocation.map (l => [typeof l, Boolean(l), l? l.specificity : l ]));
             Object.assign (result, info);
       }
       debug(`after checking for possible pc sector ${possiblePcSector.toString()}, result is `,result);
@@ -215,12 +219,11 @@ const populateLocationObject = async (locations, options={} ) => {
       return result
     }) ;
 
-  let bestLocation = (await Promise.all(possibles))
-    .filter (Boolean)
+  let bestLocation = (await Promise.all(possibles));
+  // debug (bestLocation.map (l => [typeof l, Boolean(l), l? l.specificity : l ]));
+  bestLocation = bestLocation
+    .filter (Boolean)                                              // belt and braces - should at least be an empty LocationObject
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
-
-  // debug('results:',bestLocation );
-
   return bestLocation[0];
 };
 
