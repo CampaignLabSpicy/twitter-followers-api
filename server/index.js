@@ -101,7 +101,7 @@ app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
   if (!userData) {
     console.log('No userData in session - sending 403');
-    return res.status(403).send('You are not logged in with Twitter')
+    return res.status(403).send('You dont appear to be logged in with Twitter. If you have valid secrets in .env, are logged in with Twitter and have authorised the app (since restarting the api server) you may be being 15 minute rate limited')
   }
   try {
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
@@ -117,7 +117,7 @@ console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> query:',re
     req.session.location = await populateLocationObject (location, locationOptions={ useGoogle : true} ) ;
     res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })
   } catch (e) {
-    console.log(e);
+    debug(e);
     res.status(e.statusCode || 500).send(e.message)
   }
 })
@@ -143,7 +143,7 @@ console.log(req.query);
   try {
       req.session.location = await populateLocationObject (location, { useGoogle : true} ) ;
     } catch (e) {
-      console.log(e);
+      debug(e);
       res.status(e.statusCode || 500).send(e.message)
     }
 

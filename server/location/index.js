@@ -5,7 +5,7 @@ const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPo
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
 toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
 const { officialLabourHandlesFromConstituency } = require ('./locationmatchers');
-const { fromPostcodesIo, fromGoogle, fromTwitter,
+const { fromPostcodesIo, fromDoogal, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
 
 const LocationObject = ()=> ({
@@ -64,6 +64,33 @@ const addOfficialLabourHandles = (resultObject, locationInfo) => {
   }
 }
 
+// can consume only full pc string as location
+const tryFullPcLookup = async (locations, options={} ) => {
+  debug('got pc:',fullPc);
+  let specificity;
+  const info = await locationInfoFromPostcode(fullPc);
+  debug('fullPC lookup found keys:',Object.keys(info));
+  if (info.region)
+    specificity = 1
+  if (isPostcodeDistrict(info.pcd))
+    specificity = 5
+  if (info.parliamentary_constituency)
+    specificity = 6
+  if (toLatLong(info.latLong) || isFullPostcode(info.pc || info.pc7 || info.pc8))
+    specificity = 10
+  // TODO: use GSS bits here from GSS converter
+
+  // job done, don't examine other cases
+  cache.put(fullPc, result, noVerify);
+  debug('Successful lookup, got: ', info);
+  // don't retrieve handles from cache, we want fresh ones!
+  addOfficialLabourHandles (result, info);
+  return result
+}
+
+
+
+
 // locations is one of:
 // . query object, eg {pc='AB1 9XY', latlong=<leafletJS latlong>}
 // . pcd, pc7, pc8, latLong, leafletJS latlong
@@ -80,7 +107,7 @@ const populateLocationObject = async (locations, options={} ) => {
         return null
       // NB currently does not cache failures well
 
-  // debug('\ntrying to convert ',idx,location);
+      // debug('\ntrying to convert ',idx,location);
       if (typeof location !=='object') {
         location = cache.canonicalise(location);
 
@@ -93,55 +120,58 @@ const populateLocationObject = async (locations, options={} ) => {
           if (cache[location])
             return cache.get(location, noVerify)
       }
-  // debug(`canonicalised ${''}(if string): ${location}`);
+      // debug(`canonicalised ${''}(if string): ${location}`);
 
       // the only permissable objects are
       // . latLng (leaflet.js)
       // . or req.query object containing at least one of pc, pc7, pc8, pcd, latlong as properties
       const fullPc = location.pc7 || location.pc8 || location.pc || location;
-      if (isFullPostcode(fullPc))
+      if (isFullPostcode(fullPc)) {
         try {
-    debug('got pc:',fullPc);
-          let specificity;
-          const info = await locationInfoFromPostcode(fullPc)
-    debug(Object.keys(info));
-          if (info.region)
-            specificity = 1
-          if (isPostcodeDistrict(info.pcd))
-            specificity = 5
-          if (info.parliamentary_constituency)
-            specificity = 6
-          if (toLatLong(info.latLong) || isFullPostcode(info.pc || info.pc7 || info.pc8))
-            specificity = 10
-          // TODO: use GSS bits here from GSS converter
-
-          Object.assign (result, info, {specificity} );
-
-          // job done, don't examine other cases
-          cache.put(fullPc, result, noVerify);
-          debug('Successful lookup, got: ', info);
-          // don't retrieve handles from cache, we want fresh ones!
-          addOfficialLabourHandles (result, info);
-          return result
+          const info = await tryFullPcLookup (fullPc, options);
+          if (info)
+            Object.assign (result, info, {specificity} );
         }
         catch (err) {
           if (err.message.endsWith('404')) {
             if (typeof location==='string')
               location = districtFromFullPostcode(fullPc)
-            else
+            else {
+              let parts = partsFromPostcode(fullPc);
               location.pcd = location.pcd || districtFromFullPostcode(fullPc)
+              location.pcs = location.pcs || (parts[1] && `${parts[0]}${parts[1].slice(0,1)}`)
+            }
           }
-          console.log(err);
+          debug ('Uncaught Error type - expected success or 404, got:', err);
         }
-
-      if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
-        // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
-        Object.assign (result, {
-          pcd : location.pcd || location,
-          specificity : 5
-        });
-        //  cache but don't return - we may get a better result
       }
+
+
+      // Try postcode sector with Doogal
+      const possiblePcSector = 
+        isFullPostcode(location) ?
+          location.slice(-2)
+          : location.pcs ;
+      if (possiblePcSector && result.specificity<6 && isPostcodeDistrict(possiblePcSector)) {
+        debug ('Trying PCS from Doogal as',possiblePcSector)
+        const info = fromDoogal(possiblePcSector);
+        if (info)
+          Object.assign (result, info );
+      }
+
+      // Try postcode district with Doogal
+      if (result.specificity<5 && (isPostcodeDistrict(location.pcd || location))) {
+        debug ('Trying PCD from Doogal as', location.pcd || location)
+        const info = fromDoogal(location.pcd || location);
+        if (info)
+          Object.assign (result, info )
+      }
+
+      // Object.assign (result, {
+      //   pcd : location.pcd || location,
+      //   specificity : 5
+      // });
+      // //  cache but don't return - we may get a better result
 
       // TODO: other string types, or, eg, query.city
 

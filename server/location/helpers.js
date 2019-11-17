@@ -54,6 +54,42 @@ const postcodeFromString = pc => {
   return (`${ pcd }${ inwardCode? ' '+inwardCode : '' }`).toUpperCase();
 }
 
+const standardPcAndSpecificity = pc => {
+  const fields = {}
+  fields.specificity =
+    isFullPostcode(pc) ? 10
+      : isPostcodeDistrict(pc.slice(0, -2)) ? 6
+        : isPostcodeDistrict(pc) ? 5
+          : 0 ;
+
+  switch (fields.specificity) {
+     case 10:
+      fields.pc7 = pc7FromFullPostcode(pc);
+      fields.pc = fields.pc7;
+     break;
+     case 6:
+      fields.pcd = districtFromPostcodeDistrict(pc.slice(0, -2));
+      fields.pc = fields.pcd;
+      fields.pcs = pc.toUpperCase();
+     break;
+     case 5:
+      fields.pc = districtFromPostcodeDistrict(pc);
+      fields.pcs = fields.pc;
+     break;
+     default:
+      return null;
+  }
+  return fields ;
+}
+
+const latLngFromPostcodeDistrict = pcd => {
+
+}
+
+const latLngFromPostcodeSector = pc => {
+
+}
+
 const isLeafletLatLng = latLng =>
   (typeof latLng === 'object') && (typeof latLng.lat === 'number') && (typeof latLng.lng === 'number')
 
@@ -66,9 +102,6 @@ const toLatLong = latLong => {
     return (latLong.lat===undefined || latLong.lng===undefined) ?
       null
       : latLong
-if (typeof latLong==='string')
-console.log('##',latLong);
-console.log('###',latLongFromString(latLong));
   if (typeof latLong==='string')
     return latLongFromString(latLong)
   return null
@@ -145,7 +178,7 @@ const promiseyLog = message => result =>  {
 
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
-  postcodeFromString,
+  postcodeFromString, standardPcAndSpecificity,
   toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString,
   roundToNearest, latLongIsInBritishIsles, promiseyLog
 }

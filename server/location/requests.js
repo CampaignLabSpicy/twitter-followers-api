@@ -1,3 +1,4 @@
+const debug = require('debug')('kyf:location.server.index.js');
 
 // postcodesio-client is an alternative, simpler library.
 // node-postcodes.io, remeber to pipe results through include nodePostcodesIoResultsShim
@@ -6,7 +7,10 @@ const PostcodesIO = require('postcodesio-client');
 // const postcodesIo = new PostcodesIO('https://api.postcodes.io')
 const postcodesIo = require('node-postcodes.io');
 
-const { promiseyLog } = require ('./helpers');
+const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
+pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
+toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest, promiseyLog,
+standardPcAndSpecificity } = require ('./helpers');
 
 const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
 
@@ -137,6 +141,47 @@ const locationInfoFromPostcode = async pc=> {
   return result
 }
 
+// NB, Doogal can take a full pc7 or pc8 (not used, since we use postcodes.io), or a pcd, or
+// a postcode sector SO LONG AS it contains a space - eg 'SW1A 0'
+
+// TODO: integrate this into constituencyFromPostcode & locationInfoFromPostcode
+const fromDoogal = async pc =>  {
+  const doogalPostcodeUrl = 'https://www.doogal.co.uk/GetPostcode.ashx?postcode='
+  const result = standardPcAndSpecificity (pc);
+  if (!result.specificity)
+    return null
+
+  try {
+    let latlng;
+    const response = await fetch (pc);
+    const body = response.body();
+    // TODO: race timeout and throw appropriate error- Doogal makes no guarantees of reliability
+    console.log(response.status);
+    if (response.status !== 200)
+      return null
+    // Try again once only with pcd if pc was bad postcode sector
+    if (body.length && pc.indexOf(' ') === pc.length-2)
+      return doogalRequest(pc.slice(0, -2))
+    if (body.length > 27)
+      debug (`interesting Doogal result from ${pc} : '${body}'`)
+    latLng=body.split('  ')[1];
+    if (!latLng)
+      return null
+    latLng=latLng.split(' ');
+    latLng=`latLng[0],latLng[1]`;
+    latLng=toStandardLatLong(latLng);
+    if (!latLng)
+      return null
+    result.latLng = latLng;
+
+    // TODO: Add town name from Doogal CSV
+    return result;
+  }
+  catch (e) {
+    // TODO: handle errors - Doogal makes no guarantees of reliability!
+    throw e;
+  }
+}
 
 /// GOOGLE: - - - - - - - - - - - - - - -
 
@@ -169,4 +214,4 @@ const fromTwitter = async (location, twitterData )=> {
 // fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
 
 
-module.exports = { fromPostcodesIo, fromGoogle, fromTwitter, constituencyFromPostcode, locationInfoFromPostcode }
+module.exports = { fromPostcodesIo, fromDoogal, fromGoogle, fromTwitter, constituencyFromPostcode, locationInfoFromPostcode }
