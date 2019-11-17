@@ -106,8 +106,6 @@ app.get('/api', async (req, res) => {
   try {
     const followerIds = await twitter.getFollowerIds(userData.screen_name, oauthAccessToken, oauthAccessTokenSecret)
     const matchedIds = await matcher(followerIds)
-debug('BEFORE:',req.session.location)
-console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> query:',req.query);
     let location = [
       req.query,                         // query: We assume any query passed will include one+ of pc, p7, pc8, latlong
       req.session.location,              // session: NB Any location object from session may be partial
@@ -115,9 +113,7 @@ console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> query:',re
       LocationObject()
     ];
     console.log(location);
-debug('AFTER:',req.session.location)
     req.session.location = await populateLocationObject (location, locationOptions={ useGoogle : false} ) ;
-debug('UPDATED:',req.session.location)
     res.send({ total: followerIds.length, matched: matchedIds.length, location: req.session.location })
   } catch (e) {
     debug(e);

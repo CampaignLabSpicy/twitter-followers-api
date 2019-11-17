@@ -93,6 +93,29 @@ const tryFullPcLookup = async (fullPc, options={} ) => {
   return result
 }
 
+// Try postcode sector with Doogal
+const tryPcSectorLookup = async possiblePcSector => {
+  if (possiblePcSector
+    && (typeof possiblePcSector === 'string')
+    && isFullPostcode(possiblePcSector+'XX')) {
+      // debug ('Trying PCS from Doogal as',possiblePcSector)
+      const info = await fromDoogal(possiblePcSector);
+      // debug ('Got the result from Doogal:',info)
+      return info
+    } else
+    return null
+};
+
+const tryPcDistrictLookup = async location => {
+  // Try postcode district with Doogal
+  if (isPostcodeDistrict(location.pcd || location)) {
+    debug ('Trying PCD from Doogal as', location.pcd || location.pc || location)
+    const info = await fromDoogal(location.pcd || location);
+    return info
+    } else
+    return null
+};
+
 
 // locations is one of:
 // . query object, eg {pc='AB1 9XY', latlong=<leafletJS latlong>}
@@ -102,6 +125,8 @@ const populateLocationObject = async (locations, options={} ) => {
   let handles = [];
   if (!Array.isArray(locations))
     locations = [locations];
+
+
 
   debug (locations.map (l => [typeof l, Boolean(l), l? l.specificity : l ]));
   const possibles = locations
@@ -158,30 +183,27 @@ const populateLocationObject = async (locations, options={} ) => {
         }
       }
 
-
-      // Try postcode sector with Doogal
-      const possiblePcSector = location.pcs || location.pc || location;
-      if (possiblePcSector
-        && (typeof possiblePcSector === 'string')
-        && isFullPostcode(possiblePcSector+'XX')
-        && result.specificity<6 ) {
-          debug ('Trying PCS from Doogal as',possiblePcSector)
-          const info = await fromDoogal(possiblePcSector);
-          debug ('Got the result from Doogal:',info)
+      try {
+        // postcode sector
+        if (result.specificity<6) {
+          const possiblePcSector = location.pcs || location.pc || location;
+          const info = await tryPcSectorLookup (possiblePcSector);
           if (info)
-  debug (bestLocation.map (l => [typeof l, Boolean(l), l? l.specificity : l ]));
-            Object.assign (result, info);
-      }
-      debug(`after checking for possible pc sector ${possiblePcSector.toString()}, result is `,result);
+            Object.assign (result, info );
+          debug(`after checking for possible pcs ${possiblePcSector.toString()}, result is `,result);
+        }
 
-      debug (`specificity:${result.specificity} - If <5 and any of (${location.pcd } ${ location.pc } ${isPostcodeDistrict(location.pcd || location.pc || location)}) are truthy, check pcd`)
+        debug (`specificity:${result.specificity} - If <5 and any of (${location.pcd } ${ location.pc } ${isPostcodeDistrict(location.pcd || location.pc || location)}) are truthy, check pcd`)
 
-      // Try postcode district with Doogal
-      if (result.specificity<5 && (isPostcodeDistrict(location.pcd || location))) {
-        debug ('Trying PCD from Doogal as', location.pcd || location.pc || location)
-        const info = fromDoogal(location.pcd || location);
-        if (info)
-          Object.assign (result, info )
+        // postcode district
+        if (result.specificity<5) {
+          const info = await tryPcDistrictLookup (location);
+          if (info)
+            Object.assign (result, info )
+        }
+
+      } catch (err) {
+        throw err
       }
 
       // TODO: reverse lookup constituency, eg from Doogal, or Doogal CSVs
