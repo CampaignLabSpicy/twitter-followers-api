@@ -4,6 +4,7 @@ const pc8Regexp = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?) (\d[a-z|A-Z]{2})/);
 const pcdRegexp = new RegExp(/([a-z|A-Z]{1,2}\d(\d|\w)?)\s*$/);
 const latLongEastWestRegExp = new RegExp(/(.*)([NSns])(.*)([EWew])(.*)/);
 const latLongDigitsRegExp = new RegExp(/^\s*\(?\s*(-?\d*.\d*)\s*,\s*(-?\d*.\d*)\s*\)?\s*$/);
+const latLongDigitsCommaOptionalRegExp = new RegExp(/^\s*\(?\s*(-?\d*.\d*)\s*,?\s*(-?\d*.\d*)\s*\)?\s*$/);
 const is4dplatLongRegExp = new RegExp(/^(-?\d*(.\d{0,4})?),(-?\d*(.\d{0,4})?)$/);
 const whitespaceRegExp = new RegExp(/(^\s+|\s+$)/g);
 
@@ -127,7 +128,7 @@ const latLongFromString = latLong => {
   const eastWest = latLong.match(latLongEastWestRegExp);
   if (eastWest)
     latLong = `${eastWest[1]}${eastWest[3]}${eastWest[5]}`;
-  const matchDigits = latLong.match(latLongDigitsRegExp);
+  const matchDigits = latLong.match(latLongDigitsRegExp) ||  latLong.match(latLongDigitsCommaOptionalRegExp);
   if (!matchDigits)
     return null;
   let [_, lng, lat] = matchDigits;
@@ -180,5 +181,5 @@ module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
   postcodeFromString, standardPcAndSpecificity,
   toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString,
-  roundToNearest, latLongIsInBritishIsles, promiseyLog
+  roundToNearest, latLongIsInBritishIsles, latLongDigitsCommaOptionalRegExp, promiseyLog
 }

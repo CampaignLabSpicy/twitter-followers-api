@@ -10,7 +10,8 @@ const postcodesIo = require('node-postcodes.io');
 
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
-toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest, promiseyLog,
+toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, latLongDigitsCommaOptionalRegExp,
+ roundToNearest, promiseyLog,
 standardPcAndSpecificity } = require ('./helpers');
 
 const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
@@ -25,7 +26,7 @@ const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
 
 const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
-  (result, report) => { report.latLong = { lng : result.longitude, lat: result.latitude } },
+  (result, report) => { report.latLng = { lng : result.longitude, lat: result.latitude } },
   (result, report) => { report.gss = result.codes.parliamentary_constituency },
   (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
   (result, report) => { delete report.codes }
@@ -167,17 +168,17 @@ const fromDoogal = async pc =>  {
       return fromDoogal(pc.slice(0, -2))
     if (body.length > 27)
       debug (`interesting Doogal result from ${pc} : '${body}'`)
-    // regexes are behaving oddly here  - some kind of different whitespace in request asd is displayed ??
-    latLng=body.split(/\s\s+/)[1];
-    debug(`>> Doogal result from ${pc}: latLng may be '${latLng}'`);
+
+    latLng=body.split('\x09')
     if (!latLng)
       return null
-    latLng=latLng.split(' ');
-    latLng=`latLng[0],latLng[1]`;
+    latLng = `${latLng[1]},${latLng[2]}`
+    debug(`Doogal result from ${pc}: latLng may be '${latLng}'`);
     latLng=toStandardLatLong(latLng);
     if (!latLng)
       return null
     result.latLng = latLng;
+    debug('will return result:',result)
 
     // TODO: Add town name from Doogal CSV
     return result;

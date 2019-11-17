@@ -163,14 +163,14 @@ const populateLocationObject = async (locations, options={} ) => {
         && isFullPostcode(possiblePcSector+'XX')
         && result.specificity<6 ) {
           debug ('Trying PCS from Doogal as',possiblePcSector)
-          const info = fromDoogal(possiblePcSector);
+          const info = await fromDoogal(possiblePcSector);
+          debug ('Got the result from Doogal:',info)
           if (info)
             Object.assign (result, info);
       }
+      debug(`after checking for possible pc sector ${possiblePcSector.toString()}, result is `,result);
 
-debug(`after poss pcs ${possiblePcSector.toString()}, result is `,result);
-
-debug (`${result.specificity} ${location.pcd } ${ location.pc } ${isPostcodeDistrict(location.pcd || location.pc || location)}`)
+      debug (`specificity:${result.specificity} - If <5 and any of (${location.pcd } ${ location.pc } ${isPostcodeDistrict(location.pcd || location.pc || location)}) are truthy, check pcd`)
 
       // Try postcode district with Doogal
       if (result.specificity<5 && (isPostcodeDistrict(location.pcd || location))) {
@@ -180,18 +180,17 @@ debug (`${result.specificity} ${location.pcd } ${ location.pc } ${isPostcodeDist
           Object.assign (result, info )
       }
 
-      // Object.assign (result, {
-      //   pcd : location.pcd || location,
-      //   specificity : 5
-      // });
-      // //  cache but don't return - we may get a better result
+      // TODO: reverse lookup constituency, eg from Doogal, or Doogal CSVs
+
 
       // TODO: other string types, or, eg, query.city
 
       // NB using lowercase latlong, as it's a querystring
       location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
 
-      debug (`By now, location should be cachable, ie a string or null. location is: ${location}`)
+      // set location here - should latlong take priority over pc7/pc8?
+      // .. and should latLng take priority over pc7/pc8?
+      debug (`By now, location should be cacheable, ie a string or null. location is: ${location}`)
 
 // WHAT IF THE INFO'S NOT FROM LATLNG!!?
       if (latLongFrom4dpLatLongString(location)) {
@@ -206,7 +205,7 @@ debug (`${result.specificity} ${location.pcd } ${ location.pc } ${isPostcodeDist
 
       if (options.useGoogle) {
         // If useGoogle==true, use our API credits to try to get a more specific location from Google API
-        cache.put (location, result);
+        cache.put (location, result);  // NB will throw error since location may still be object when we reach here
       }
 
       if (options.useTwitterContext) {
