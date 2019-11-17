@@ -1,4 +1,5 @@
 const debug = require('debug')('kyf:location.server.index.js');
+const fetch = require('node-fetch');
 
 // postcodesio-client is an alternative, simpler library.
 // node-postcodes.io, remeber to pipe results through include nodePostcodesIoResultsShim
@@ -133,9 +134,9 @@ const locationInfoFromPostcode = async pc=> {
     .catch (err=> {
       if (err.message.endsWith('404')) {
         // TODO: catch bad 404s resulting from bad postcodes
-        console.log(`Bad postcode - ${pc}`);
+        console.log(`Bad postcode - ${pc}. Will rethrow.`);
       }
-      console.log(err);
+      throw err;
     }) ;
   addConstituencyInfoTo (result);
   return result
@@ -153,18 +154,22 @@ const fromDoogal = async pc =>  {
 
   try {
     let latlng;
-    const response = await fetch (pc);
-    const body = response.body();
+    const response = await fetch (doogalPostcodeUrl+pc);
+    let body = await response.text()
+    body = body.split('\n')[0];
+    debug(`Doogal result from ${pc}: '${body}'`);
     // TODO: race timeout and throw appropriate error- Doogal makes no guarantees of reliability
     console.log(response.status);
     if (response.status !== 200)
       return null
     // Try again once only with pcd if pc was bad postcode sector
-    if (body.length && pc.indexOf(' ') === pc.length-2)
-      return doogalRequest(pc.slice(0, -2))
+    if (!body.length && pc.indexOf(' ') === pc.length-2)
+      return fromDoogal(pc.slice(0, -2))
     if (body.length > 27)
       debug (`interesting Doogal result from ${pc} : '${body}'`)
-    latLng=body.split('  ')[1];
+    // regexes are behaving oddly here  - some kind of different whitespace in request asd is displayed ??
+    latLng=body.split(/\s\s+/)[1];
+    debug(`>> Doogal result from ${pc}: latLng may be '${latLng}'`);
     if (!latLng)
       return null
     latLng=latLng.split(' ');

@@ -144,7 +144,7 @@ console.log('Found something:',lat,lng);
 }
 
 const latLongFrom4dpLatLongString = latLong => {
-  if (!latLong)
+  if (!latLong || typeof latLong !== 'string')
     return null;
   const groups = latLong.match(is4dplatLongRegExp);
   if (!groups)
@@ -176,7 +176,7 @@ const promiseyLog = message => result =>  {
 }
 
 
-module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
+module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode, partsFromPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
   postcodeFromString, standardPcAndSpecificity,
   toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString,

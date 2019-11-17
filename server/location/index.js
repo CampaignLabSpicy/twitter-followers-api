@@ -1,7 +1,7 @@
 const debug = require('debug')('kyf:location.server.index.js');
 
 // const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
-const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
+const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode, partsFromPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
 toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
 const { officialLabourHandlesFromConstituency } = require ('./locationmatchers');
@@ -65,8 +65,10 @@ const addOfficialLabourHandles = (resultObject, locationInfo) => {
 }
 
 // can consume only full pc string as location
-const tryFullPcLookup = async (locations, options={} ) => {
+// Starts from an empty LocationObject, therefore relies on being the first lookup function called.
+const tryFullPcLookup = async (fullPc, options={} ) => {
   debug('got pc:',fullPc);
+  const result = LocationObject();
   let specificity;
   const info = await locationInfoFromPostcode(fullPc);
   debug('fullPC lookup found keys:',Object.keys(info));
@@ -74,11 +76,14 @@ const tryFullPcLookup = async (locations, options={} ) => {
     specificity = 1
   if (isPostcodeDistrict(info.pcd))
     specificity = 5
-  if (info.parliamentary_constituency)
+  if (info.parliamentary_constituency)        // valid postcode sector, eg XX12 3 is also specificity 6.
     specificity = 6
   if (toLatLong(info.latLong) || isFullPostcode(info.pc || info.pc7 || info.pc8))
     specificity = 10
   // TODO: use GSS bits here from GSS converter
+
+  // TODO : check if it is possible for info to be other than useful here (locationInfoFromPostcode should have thrown if not)
+  Object.assign (result, info, { specificity:10 } );
 
   // job done, don't examine other cases
   cache.put(fullPc, result, noVerify);
@@ -89,12 +94,10 @@ const tryFullPcLookup = async (locations, options={} ) => {
 }
 
 
-
-
 // locations is one of:
 // . query object, eg {pc='AB1 9XY', latlong=<leafletJS latlong>}
 // . pcd, pc7, pc8, latLong, leafletJS latlong
-// . a prioirty ordered array of the above
+// . a priority ordered array of the above
 const populateLocationObject = async (locations, options={} ) => {
   let handles = [];
   if (!Array.isArray(locations))
@@ -105,6 +108,7 @@ const populateLocationObject = async (locations, options={} ) => {
       const result = LocationObject();
       if (!location)
         return null
+
       // NB currently does not cache failures well
 
       // debug('\ntrying to convert ',idx,location);
@@ -130,9 +134,10 @@ const populateLocationObject = async (locations, options={} ) => {
         try {
           const info = await tryFullPcLookup (fullPc, options);
           if (info)
-            Object.assign (result, info, {specificity} );
+            Object.assign (result, info );
         }
         catch (err) {
+          debug (`Error received: '${err.message}'`)
           if (err.message.endsWith('404')) {
             if (typeof location==='string')
               location = districtFromFullPostcode(fullPc)
@@ -140,28 +145,36 @@ const populateLocationObject = async (locations, options={} ) => {
               let parts = partsFromPostcode(fullPc);
               location.pcd = location.pcd || districtFromFullPostcode(fullPc)
               location.pcs = location.pcs || (parts[1] && `${parts[0]}${parts[1].slice(0,1)}`)
+              delete location.pc7;
+              delete location.pc8;
+              if (location.pc)
+                location.pc=location.pcd;
             }
-          }
-          debug ('Uncaught Error type - expected success or 404, got:', err);
+          } else
+          debug (`Uncaught Error type - expected success or 404, got:'${err.message}'`);
         }
       }
 
 
       // Try postcode sector with Doogal
-      const possiblePcSector = 
-        isFullPostcode(location) ?
-          location.slice(-2)
-          : location.pcs ;
-      if (possiblePcSector && result.specificity<6 && isPostcodeDistrict(possiblePcSector)) {
-        debug ('Trying PCS from Doogal as',possiblePcSector)
-        const info = fromDoogal(possiblePcSector);
-        if (info)
-          Object.assign (result, info );
+      const possiblePcSector = location.pcs || location.pc || location;
+      if (possiblePcSector
+        && (typeof possiblePcSector === 'string')
+        && isFullPostcode(possiblePcSector+'XX')
+        && result.specificity<6 ) {
+          debug ('Trying PCS from Doogal as',possiblePcSector)
+          const info = fromDoogal(possiblePcSector);
+          if (info)
+            Object.assign (result, info);
       }
+
+debug(`after poss pcs ${possiblePcSector.toString()}, result is `,result);
+
+debug (`${result.specificity} ${location.pcd } ${ location.pc } ${isPostcodeDistrict(location.pcd || location.pc || location)}`)
 
       // Try postcode district with Doogal
       if (result.specificity<5 && (isPostcodeDistrict(location.pcd || location))) {
-        debug ('Trying PCD from Doogal as', location.pcd || location)
+        debug ('Trying PCD from Doogal as', location.pcd || location.pc || location)
         const info = fromDoogal(location.pcd || location);
         if (info)
           Object.assign (result, info )
@@ -177,6 +190,8 @@ const populateLocationObject = async (locations, options={} ) => {
 
       // NB using lowercase latlong, as it's a querystring
       location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
+
+      debug (`By now, location should be cachable, ie a string or null. location is: ${location}`)
 
 // WHAT IF THE INFO'S NOT FROM LATLNG!!?
       if (latLongFrom4dpLatLongString(location)) {
