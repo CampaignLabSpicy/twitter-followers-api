@@ -8,6 +8,15 @@ const { officialLabourHandlesFromConstituency } = require ('./locationmatchers')
 const { fromPostcodesIo, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
 
+const logSpecifities = locArr => {
+  debug (`specificites: ${locArr.map(loc =>
+    typeof loc !== 'object' ?
+      '!'
+      : typeof loc.specificity === 'number' ?
+        loc.specificity : '#'
+    )}`)
+};
+
 const LocationObject = ()=> ({
   specificity : 0,
   twitterString  : '',
@@ -73,6 +82,8 @@ const populateLocationObject = async (locations, options={} ) => {
   if (!Array.isArray(locations))
     locations = [locations];
 
+  logSpecifities (locations);
+
   const possibles = locations
     .map (async (location, idx) => {
       const result = LocationObject();
@@ -133,20 +144,20 @@ const populateLocationObject = async (locations, options={} ) => {
           }
           console.log(err);
         }
-
-      if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
-        // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
-        Object.assign (result, {
-          pcd : location.pcd || location,
-          specificity : 5
-        });
-        //  cache but don't return - we may get a better result
-      }
+      //
+      // if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
+      //   // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
+      //   Object.assign (result, {
+      //     pcd : location.pcd || location,
+      //     specificity : 5
+      //   });
+      //   //  cache but don't return - we may get a better result
+      // }
 
       // TODO: other string types, or, eg, query.city
 
-      // NB using lowercase latlong, as it's a querystring
-      location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
+      // TODO: add processing for lowercase latlong, (latlong lowercase comes from querystring)
+      location = (location.latLong || location.pcd || (typeof location === 'string')) ? location : null
 
 // WHAT IF THE INFO'S NOT FROM LATLNG!!?
       if (latLongFrom4dpLatLongString(location)) {
@@ -156,25 +167,31 @@ const populateLocationObject = async (locations, options={} ) => {
         cache.put( location, result, noVerify );
         // don't retrieve handles from cache, we want fresh ones!
         addOfficialLabourHandles (result, locationInfo);
+        // always return result here, since 10 is the maximum specificity.
         return result
       }
 
       if (options.useGoogle) {
         // If useGoogle==true, use our API credits to try to get a more specific location from Google API
-        cache.put (location, result);
+        // cache.put (location, result);
       }
 
       if (options.useTwitterContext) {
         // Use context from eg user's tweets to attempt to guess location
         // user data, eg screen name is received in options.useTwitterContext object
       }
-      return result
+
+      return (location && location.specificity && (location.specificity >= result.specificity)) ?
+        location
+        : result
     }) ;
+
 
   let bestLocation = (await Promise.all(possibles))
     .filter (Boolean)
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
 
+  logSpecifities (bestLocation);
   // debug('results:',bestLocation );
 
   return bestLocation[0];

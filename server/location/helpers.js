@@ -111,7 +111,7 @@ console.log('Found something:',lat,lng);
 }
 
 const latLongFrom4dpLatLongString = latLong => {
-  if (!latLong)
+  if (!latLong || typeof latLong !== 'string')
     return null;
   const groups = latLong.match(is4dplatLongRegExp);
   if (!groups)
