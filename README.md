@@ -11,6 +11,22 @@ You may need to browse to this port, even if you are accessing in development on
 
 `http://localhost:8080/api` should give you yor followers!
 
+### `server/location/`
+
+`/api` now responds with a location object as part of its JSON reponse, which minimally includes at least one form of location (likely, twitter location (`twitterString` or postcode (`pc`/ `pc7`/ `pc8`/ `pcd`) & `latLong`), and a specificity of that location, which will only be reported if meaningful (ie blank/ incomprehensible locations are not counted in specificity)
+
+##### location.specificity
+* 0 - no location
+* 1 - region / country
+* 3 - Local Authority
+* 5 - pcd (postcode district, eg `WC2A` or `NN6`)
+* 6 - parliamentary_constituency
+* 10 - pc7/ pc8 (eg `WC2A1AA` / `WC2A 1AA`) or latLong
+
+##### passing location data
+Calls to the `/api` route establish a `location` object as a property of express-session's `session` passed back and forth on request/ response on the domain.
+The primary means of passing a detailed location to the server is via query params `pc` (postcode) or `latlong`. Acceptance is liberal, but 7-digit, no-space postcodes and leaflet.js latLng (`{lat,lng}`) are standard. Where lat, lng are not explicit, order is lng, lat.
+
 ### Data
 
 The server can work with data stored in memory, in Redis, or in MongoDB.
