@@ -3,7 +3,7 @@ const debug = require('debug')('kyf:location.server.index.js');
 // const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode, partsFromPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
-toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
+toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest, withAt } = require ('./helpers');
 const { officialLabourHandlesFromConstituency } = require ('./locationmatchers');
 const { fromPostcodesIo, fromDoogal, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
@@ -59,7 +59,7 @@ const addOfficialLabourHandles = (resultObject, locationInfo) => {
       resultObject.twitterHandles = [];
     let handles = officialLabourHandlesFromConstituency(locationInfo.parliamentary_constituency) || []
     handles.forEach ( handle =>
-        resultObject.twitterHandles.push(handle)
+        resultObject.twitterHandles.push(withAt(handle))
     )
   }
 }
@@ -250,7 +250,10 @@ const populateLocationObject = async (locations, options={} ) => {
   bestLocation = bestLocation
     .filter (Boolean)                                              // belt and braces - should at least be an empty LocationObject
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
-  return bestLocation[0];
+
+  // debug('results:',bestLocation );
+
+  return bestLocation[0] || LocationObject();
 };
 
 module.exports = { LocationObject, populateLocationObject, constituencyFromPostcode }
