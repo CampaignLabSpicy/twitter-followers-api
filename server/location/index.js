@@ -112,8 +112,8 @@ const tryPcDistrictLookup = async location => {
     debug ('Trying PCD from Doogal as', location.pcd || location.pc || location)
     const info = await fromDoogal(location.pcd || location);
     return info
-    } else
-    return null
+  } else
+  return null
 };
 
 
