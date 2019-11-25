@@ -21,7 +21,7 @@ const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
 const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
   (result, report) => { report.latLong = { lng : result.longitude, lat: result.latitude } },
-  (result, report) => { report.gss = result.codes.parliamentary_constituency },
+  (result, report) => { report.parl_const_gss = result.codes.parliamentary_constituency },
   (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
   (result, report) => { delete report.codes }
 ]

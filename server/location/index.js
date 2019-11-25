@@ -3,19 +3,10 @@ const debug = require('debug')('kyf:location.server.index.js');
 // const { constituencyFromPostcode, locationInfoFromPostcode } = require ('./externals');
 const { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
 pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict, postcodeFromString,
-toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest } = require ('./helpers');
+toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString, roundToNearest, withAt } = require ('./helpers');
 const { officialLabourHandlesFromConstituency } = require ('./locationmatchers');
 const { fromPostcodesIo, fromGoogle, fromTwitter,
   constituencyFromPostcode, locationInfoFromPostcode  } = require ('./requests');
-
-const logSpecifities = locArr => {
-  debug (`specificites: ${locArr.map(loc =>
-    typeof loc !== 'object' ?
-      '!'
-      : typeof loc.specificity === 'number' ?
-        loc.specificity : '#'
-    )}`)
-};
 
 const LocationObject = ()=> ({
   specificity : 0,
@@ -68,7 +59,7 @@ const addOfficialLabourHandles = (resultObject, locationInfo) => {
       resultObject.twitterHandles = [];
     let handles = officialLabourHandlesFromConstituency(locationInfo.parliamentary_constituency) || []
     handles.forEach ( handle =>
-        resultObject.twitterHandles.push(handle)
+        resultObject.twitterHandles.push(withAt(handle))
     )
   }
 }
@@ -81,8 +72,6 @@ const populateLocationObject = async (locations, options={} ) => {
   let handles = [];
   if (!Array.isArray(locations))
     locations = [locations];
-
-  logSpecifities (locations);
 
   const possibles = locations
     .map (async (location, idx) => {
@@ -144,15 +133,15 @@ const populateLocationObject = async (locations, options={} ) => {
           }
           console.log(err);
         }
-      //
-      // if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
-      //   // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
-      //   Object.assign (result, {
-      //     pcd : location.pcd || location,
-      //     specificity : 5
-      //   });
-      //   //  cache but don't return - we may get a better result
-      // }
+
+      if (result.specificity<5 && isPostcodeDistrict(location.pcd || location)) {
+        // TODO: use cache, google, etc, to get some sense from partial postcode if it is real
+        Object.assign (result, {
+          pcd : location.pcd || location,
+          specificity : 5
+        });
+        //  cache but don't return - we may get a better result
+      }
 
       // TODO: other string types, or, eg, query.city
 
@@ -191,10 +180,9 @@ const populateLocationObject = async (locations, options={} ) => {
     .filter (Boolean)
     .sort ((a,b) => (b.specificity||0) - (a.specificity||0) )      // Specificity takes priority over input order
 
-  logSpecifities (bestLocation);
   // debug('results:',bestLocation );
 
-  return bestLocation[0];
+  return bestLocation[0] || LocationObject();
 };
 
 module.exports = { LocationObject, populateLocationObject, constituencyFromPostcode }

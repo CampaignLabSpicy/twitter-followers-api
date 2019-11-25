@@ -6,6 +6,8 @@ const latLongEastWestRegExp = new RegExp(/(.*)([NSns])(.*)([EWew])(.*)/);
 const latLongDigitsRegExp = new RegExp(/^\s*\(?\s*(-?\d*.\d*)\s*,\s*(-?\d*.\d*)\s*\)?\s*$/);
 const is4dplatLongRegExp = new RegExp(/^(-?\d*(.\d{0,4})?),(-?\d*(.\d{0,4})?)$/);
 const whitespaceRegExp = new RegExp(/(^\s+|\s+$)/g);
+const leadingWhitespaceAtWhitespaceRegExp = new RegExp(/\s*@*\s*(.*)/);
+
 
 // match pc7, pc8, pcd
 const isPc7 = pc => pc && !!(pc.match(pc7Regexp))
@@ -142,10 +144,16 @@ const promiseyLog = message => result =>  {
   return result
 }
 
+const withAt = handle => {
+  let resultGroup = handle.match(leadingWhitespaceAtWhitespaceRegExp)
+  return resultGroup ?
+    `@${resultGroup[1]}`
+    : handle ;
+}
 
 module.exports = { isPc7, isPc8, isPostcodeDistrict, isFullPostcode, isPostcode, endsWithPostcode,
   pc7FromFullPostcode, pc8FromFullPostcode, districtFromFullPostcode, districtFromPostcodeDistrict,
   postcodeFromString,
   toStandardLatLong, toLatLong, isLeafletLatLng, latLongFromString, latLongFrom4dpLatLongString,
-  roundToNearest, latLongIsInBritishIsles, promiseyLog
+  roundToNearest, latLongIsInBritishIsles, promiseyLog, withAt
 }
