@@ -17,7 +17,7 @@ const isPostcodeDistrict = pc => (typeof pc === 'string') && !!(pc.match(pcdRege
 const isFullPostcode = pc => (typeof pc === 'string') && (isPc7(pc) || isPc8(pc));
 const isPostcode = pc => isFullPostcode(pc) || isPostcodeDistrict(pc);
 
-const endsWithPostcode = pc => (pc && pc.match(endsWithPostcodeRE))
+const endsWithPostcode = pc => (pc &&  typeof pc === 'string' && pc.match(endsWithPostcodeRE))
 
 // retrieve pc7, pc8, pcd
 
