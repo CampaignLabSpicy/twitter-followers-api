@@ -211,8 +211,8 @@ const populateLocationObject = async (locations, options={} ) => {
 
       // TODO: other string types, or, eg, query.city
 
-      // NB using lowercase latlong, as it's a querystring
-      location = location.latlong || location.pcd || (typeof location === 'string') ? location : null
+      // TODO: add processing for lowercase latlong, (latlong lowercase comes from querystring)
+      location = (location.latLong || location.pcd || (typeof location === 'string')) ? location : null
 
       // set location here - should latlong take priority over pc7/pc8?
       // .. and should latLng take priority over pc7/pc8?
@@ -226,6 +226,7 @@ const populateLocationObject = async (locations, options={} ) => {
         cache.put( location, result, noVerify );
         // don't retrieve handles from cache, we want fresh ones!
         addOfficialLabourHandles (result, locationInfo);
+        // always return result here, since 10 is the maximum specificity.
         return result
       }
 
@@ -238,7 +239,10 @@ const populateLocationObject = async (locations, options={} ) => {
         // Use context from eg user's tweets to attempt to guess location
         // user data, eg screen name is received in options.useTwitterContext object
       }
-      return result
+
+      return (location && location.specificity && (location.specificity >= result.specificity)) ?
+        location
+        : result
     }) ;
 
   let bestLocation = (await Promise.all(possibles));

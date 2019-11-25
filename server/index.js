@@ -78,6 +78,7 @@ app.get('/sessions/callback', async (req, res) => {
 
 app.get('/', async (req, res) => {
 console.log('Request was to /');
+debug ('session:',session);
   const { userData } = req.session
   if (!userData) {
     return res.redirect('/login')
@@ -99,6 +100,7 @@ app.get('/test', (req, res) => {
 // But test, eg: if (!location || location < x) ... since string.prop = undefined and (undefined < x) == false
 app.get('/api', async (req, res) => {
   const { userData, oauthAccessToken, oauthAccessTokenSecret } = req.session
+  debug ('session:',session);
   if (!userData) {
     console.log('No userData in session - sending 403');
     return res.status(403).send('You dont appear to be logged in with Twitter. If you have valid secrets in .env, are logged in with Twitter and have authorised the app (since restarting the api server) you may be being 15 minute rate limited')
