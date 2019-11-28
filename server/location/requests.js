@@ -1,14 +1,14 @@
-
+const debug = require('debug')('kyf:location:requests')
 // postcodesio-client is an alternative, simpler library.
 // node-postcodes.io, remeber to pipe results through include nodePostcodesIoResultsShim
 
-const PostcodesIO = require('postcodesio-client');
+const PostcodesIO = require('postcodesio-client')
 // const postcodesIo = new PostcodesIO('https://api.postcodes.io')
-const postcodesIo = require('node-postcodes.io');
+const postcodesIo = require('node-postcodes.io')
 
-const { promiseyLog } = require ('./helpers');
+const { promiseyLog } = require('./helpers')
 
-const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
+const constituencyInfo = require('./testdata/listOfCLPsandPPCs.json')
 
 // Use these two config consts to take the data out of the XHR's result object,
 // in order to limit the info to be passed back to the cache.
@@ -18,9 +18,9 @@ const constituencyInfo = require ('./testdata/listOfCLPsandPPCs.json');
 // (eg pairing together into an array, or changing property name)
 // NB the field processor functions do NOT return meaningful info, but receive a 'report' object and mutate it.
 
-const postcodesIoDefaultFields = [ 'parliamentary_constituency', { codes : 'parliamentary_constituency' }, 'region']
+const postcodesIoDefaultFields = ['parliamentary_constituency', { codes: 'parliamentary_constituency' }, 'region']
 const postcodesIoDefaultFieldProcessors = [
-  (result, report) => { report.latLong = { lng : result.longitude, lat: result.latitude } },
+  (result, report) => { report.latLong = { lng: result.longitude, lat: result.latitude } },
   (result, report) => { report.parl_const_gss = result.codes.parliamentary_constituency },
   (result, report) => { report.parliamentary_constituency = result.parliamentary_constituency },
   (result, report) => { delete report.codes }
@@ -35,49 +35,38 @@ const addConstituencyInfoToLocation = location => {
 // NB Mutates the object!
 const addConstituencyInfoTo = result => {
   // TODO: Typecheck input (eg was it array? error?)
-  const info = constituencyInfo[result.parliamentary_constituency];
-  console.log('info',info);
-  if (!info)
-    return false;
-  console.log(info);
+  const info = constituencyInfo[result.parliamentary_constituency]
+  debug('info', info)
+  if (!info) { return false }
+  debug(info)
 }
 
 // mutates the received object report
-const recursiveProcessor = (fields, result, report) =>  {
-  if (typeof fields === 'string')
-    report[fields] = result[fields]
-  else if (Array.isArray (fields)) {
-    fields.forEach (field => recursiveProcessor(field, result, report) )
-  }
-  else if (typeof fields === 'object') {
-    Object.keys(fields).forEach (key =>  {
-      report[key] = {};
+const recursiveProcessor = (fields, result, report) => {
+  if (typeof fields === 'string') { report[fields] = result[fields] } else if (Array.isArray(fields)) {
+    fields.forEach(field => recursiveProcessor(field, result, report))
+  } else if (typeof fields === 'object') {
+    Object.keys(fields).forEach(key => {
+      report[key] = {}
       recursiveProcessor(fields[key], result[key], report[key])
     })
   }
 }
 
 const handle404 = result => {
-  if (result===null || result.status===404)
-    console.log('should throw');
-  if (result===null)
-    throw new Error(`lookup request fail - 404`);
-  if (result.status===404)
-    throw new Error(`lookup request fail ${result.status}`);
+  if (result === null || result.status === 404) { debug('should throw') }
+  if (result === null) { throw new Error('lookup request fail - 404') }
+  if (result.status === 404) { throw new Error(`lookup request fail ${result.status}`) }
   return result
-};
-
+}
 
 // NB there is a choice of two wrapper modules for Postcodes.io.
 // node-postcodes.io is more powerful, but requires this shim.
 const nodePostcodesIoResultsShim = result => {
-  if (result.status !== 200)
-    throw new Error(`HTTP request fail ${result.status}`);
-  if (Array.isArray (result.result))
-    return result.result.map (result=> result.result)   // Sorry, couldn't resist it ;)
+  if (result.status !== 200) { throw new Error(`HTTP request fail ${result.status}`) }
+  if (Array.isArray(result.result)) { return result.result.map(result => result.result) } // Sorry, couldn't resist it ;)
   return result.result
 }
-
 
 // fromPostcodesIo is currently:
 //  . set up for node-postcodes.io module (comment out ".then (nodePostcodesIoResultsShim)" to use postcodesio-client )
@@ -87,72 +76,69 @@ const nodePostcodesIoResultsShim = result => {
 const fromPostcodesIo = async (location,
   desiredFields = postcodesIoDefaultFields,
   fieldProcessors = postcodesIoDefaultFieldProcessors
-)=> {
-  const report = {};
+) => {
+  const report = {}
   await postcodesIo
   	.lookup(location)
-    .then (nodePostcodesIoResultsShim)
-    .then (handle404)
-    .then (result => result[0]!==undefined ? result[0] : result)    // Discard all results except the first - you don't want this!
-    .then (handle404) // repeated for the unpacked array result
-    .then (promiseyLog('before processing'))
-    .then (info=> {
-      recursiveProcessor (desiredFields, info, report);
-      fieldProcessors.forEach (processor=> {processor(info, report)} );
+    .then(nodePostcodesIoResultsShim)
+    .then(handle404)
+    .then(result => result[0] !== undefined ? result[0] : result) // Discard all results except the first - you don't want this!
+    .then(handle404) // repeated for the unpacked array result
+    .then(promiseyLog('before processing'))
+    .then(info => {
+      recursiveProcessor(desiredFields, info, report)
+      fieldProcessors.forEach(processor => { processor(info, report) })
       return report
   	})
     .then(promiseyLog('after processing'))
     // TODO: distinguish errors
-    .catch (err=> {
-      if (err.message.endsWith('404'))
-        throw err;
-      console.log(err);
+    .catch(err => {
+      if (err.message.endsWith('404')) { throw err }
+      console.log(err)
     })
 
   return report
 }
 
 const constituencyFromPcioLookup = async pc => {
-  const result = await fromPostcodesIo (pc) ;
+  const result = await fromPostcodesIo(pc)
   return result
 }
 
 const constituencyFromPostcode = async pc => {
   // TODO: check it's a good postcode
-  const result = await constituencyFromPcioLookup (pc)
+  const result = await constituencyFromPcioLookup(pc)
   return result
 }
 
-const locationInfoFromPostcode = async pc=> {
+const locationInfoFromPostcode = async pc => {
   // TODO: check postcodes via local .csv files first
   const result = await fromPostcodesIo(pc)
-    .catch (err=> {
+    .catch(err => {
       if (err.message.endsWith('404')) {
         // TODO: catch bad 404s resulting from bad postcodes
-        console.log(`Bad postcode - ${pc}`);
+        debug(`Bad postcode - ${pc}`)
       }
-      console.log(err);
-    }) ;
-  addConstituencyInfoTo (result);
+      console.log(err)
+    })
+  addConstituencyInfoTo(result)
   return result
 }
-
 
 /// GOOGLE: - - - - - - - - - - - - - - -
 
-const fromGoogle = async (location)=> {
-  const result = {};
+const fromGoogle = async (location) => {
+  const result = {}
 
   return result
 }
-
 
 /// TWITTER: - - - - - - - - - - - - - - -
 
 // Infer a location from Twitter context, eg tweets
-const fromTwitter = async (location, twitterData )=> {
-  const result = { specificity : 4 };
-  const { screen_name, id } = twitterData;
+const fromTwitter = async (location, twitterData) => {
+  const result = { specificity: 4 }
+  const { screen_name, id } = twitterData
 
   // do magic
 
@@ -167,6 +153,5 @@ const fromTwitter = async (location, twitterData )=> {
 // fromPostcodesIo ('PO12')
 // fromPostcodesIo ('XX99 3AA')
 // fromPostcodesIo (['XX99 3AA', 'PO12 3AB'])
-
 
 module.exports = { fromPostcodesIo, fromGoogle, fromTwitter, constituencyFromPostcode, locationInfoFromPostcode }
