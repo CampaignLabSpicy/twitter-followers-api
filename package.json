@@ -7,7 +7,7 @@
     "start": "node server",
     "dev": "nodemon server",
     "matcher": "node matcher.js",
-    "lint": "standard --fix \"server/**/*.js\" \"bin/**/*.js\"",
+    "lint": "standard --fix \"server/**/*.js\" \"bin/**/*.js\" \"test/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

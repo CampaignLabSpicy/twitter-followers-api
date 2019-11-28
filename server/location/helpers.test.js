@@ -24,7 +24,7 @@ const test = (fn, input, expected, message, logLevel=1) => {
       output += `${message || ''} - expected ${expected} but actual ${actual}`;
     }
   if (logLevel)
-    console.log(output);
+    debug(output);
   return result;
 
 }
