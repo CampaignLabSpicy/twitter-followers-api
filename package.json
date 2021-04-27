@@ -27,7 +27,7 @@
     "node-postcodes.io": "^1.0.0",
     "oauth": "^0.9.15",
     "postcodesio-client": "^0.3.4",
-    "redis": "^2.8.0",
+    "redis": "^3.1.1",
     "redis-server": "^1.2.2",
     "request": "^2.88.0",
     "tar": "^5.0.2",
